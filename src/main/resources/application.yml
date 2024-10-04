@@ -176,7 +176,7 @@ app:
 
   # org.tdl.vireo.service.SystemDataLoader
   dataLoader:
-    initialize: true
+    initialize: false
 
   # org.tdl.vireo.auth.service.VireoUserCredentialsService
   useNetidAsIdentifier: false

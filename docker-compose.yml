@@ -12,11 +12,11 @@ services:
   db:
     image: postgres
     environment:
-       - POSTGRES_DB=vireo
+       - POSTGRES_DB=vireo4
        - POSTGRES_USER=vireo
        - POSTGRES_PASSWORD=vireo
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/pgsql/data
     ports:
       - 5432:5432
     networks:

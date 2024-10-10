@@ -5,17 +5,7 @@ networks:
 
 volumes:
   pgdata:
-    driver: local
-    driver_opts:
-      o: bind
-      type: none
-      device: /var/lib/psql/data
   assets:
-    driver: local
-    driver_opts:
-      o: bind
-      type: none
-      device: /opt/vireo/data
 
 services:
 

@@ -1,18 +1,22 @@
 name: Build
 
-#on: [ push, pull_request, workflow_dispatch ]
-
 on:
   workflow_dispatch:
     inputs:
       images:
         description: 'Images to push'
         required: true
-        type: string
+        type: choice
+        options:
+          - vireo
+          - vireo-test
       environment:
         description: 'dev or prod'
         required: true
-        type: string
+        type: choice
+        options:
+          - dev
+          - prod
   workflow_call:
     inputs:
       images:
@@ -59,7 +63,6 @@ jobs:
         run: echo "VERSION=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`" >> $GITHUB_OUTPUT
   
       - name: Maven Publish
-        # if: ${{ endsWith(steps.project_version.outputs.version, '-SNAPSHOT') }}
         run: mvn -B -ntp clean deploy
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}

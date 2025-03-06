@@ -4,6 +4,15 @@ name: Build
 
 on:
   workflow_dispatch:
+    inputs:
+      images:
+        description: 'Images to push'
+        required: false
+        type: string
+      environment:
+        description: dev or prod
+        required: true
+        type: string
   workflow_call:
     inputs:
       images:

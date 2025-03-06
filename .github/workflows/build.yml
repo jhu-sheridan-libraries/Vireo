@@ -4,12 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       images:
-        description: 'Images to push'
+        description: 'Image to push'
         required: true
         type: choice
         options:
           - vireo
           - vireo-test
+        default: 'vireo'
       #environment:
       #  description: 'dev or prod'
       #  required: true
@@ -21,6 +22,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        image: ${{ fromJson(replace('["${{ inputs.images }}"]', ',', '","')) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -48,6 +53,9 @@ jobs:
           java-version: 11
           distribution: 'adopt'
           cache: 'maven'
+      
+      - name: Install dependencies
+        run: npm install
 
       - name: Get project version from POM
         id: project_version
@@ -61,7 +69,7 @@ jobs:
         #  MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
 
       - name: "Docker Build"
-        run: docker image build -t ${{ inputs.images }} .
+        run: docker image build -t ${{ matrix.image }}:${{ steps.project_version.outputs.version }} .
   
       - name: "Login to GHCR"
         uses: docker/login-action@v2
@@ -74,5 +82,5 @@ jobs:
         run: |
           for name in ${{ inputs.images }}
           do
-            docker push $name:${{ steps.project_version.outputs.version }}
+            docker push ${{ matrix.image }}:${{ steps.project_version.outputs.version }}
           done

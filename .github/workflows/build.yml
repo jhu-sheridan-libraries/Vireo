@@ -11,13 +11,11 @@ on:
           - vireo
           - vireo-test
         default: 'vireo'
-      #environment:
-      #  description: 'dev or prod'
-      #  required: true
-      #  type: choice
-      #  options:
-      #    - dev
-      #    - prod
+      environment:
+        description: 'dev or prod'
+        required: true
+        type: environment
+
 
 jobs:
   build:

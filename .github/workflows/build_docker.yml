@@ -24,43 +24,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-    #  - name: "Node Cache"
-    #    uses: actions/cache@v3
-    #    with:
-    #      path: ~/.npm
-    #      key: ${{ runner.os }}-cache-node-${{ hashFiles('**/package.json') }}
-#
-    #  - name: "Node Modules Cache"
-    #    uses: actions/cache@v3
-    #    with:
-    #      path: $GITHUB_WORKSPACE/repo/node_modules
-    #      key: ${{ runner.os }}-cache-node_modules-${{ hashFiles('**/package.json') }}
-#
-    #  - name: "Setup Node"
-    #    uses: actions/setup-node@v3
-    #    with:
-    #      node-version: 16
-#
-    #  - name: "Setup Java"
-    #    uses: actions/setup-java@v3
-    #    with:
-    #      java-version: 11
-    #      distribution: 'adopt'
-    #      cache: 'maven'
-    #  
-    #  - name: Install dependencies
-    #    run: npm install
-
       - name: Get project version from POM
         id: project_version
         run: echo "VERSION=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`" >> $GITHUB_OUTPUT
-  
-     # - name: "Maven Publish"
-     #   run: mvn -B -ntp clean deploy
-     #   #env:
-     #   #  MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-     #   #  MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
-     #   #  MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
 
       - name: "Docker Build"
         run: docker image build -t ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:${{ steps.project_version.outputs.version }} -t ${{ inputs.images }}:${{ steps.project_version.outputs.version }} .

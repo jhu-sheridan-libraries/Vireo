@@ -7,10 +7,10 @@ on:
     inputs:
       images:
         description: 'Images to push'
-        required: false
+        required: true
         type: string
       environment:
-        description: dev or prod
+        description: 'dev or prod'
         required: true
         type: string
   workflow_call:

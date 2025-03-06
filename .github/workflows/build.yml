@@ -63,7 +63,7 @@ jobs:
      #   #  MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
 
       - name: "Docker Build"
-        run: docker image build -t ghcr.io/jhu-sheridan-libraries/vireo${{ inputs.images }}:${{ steps.project_version.outputs.version }} .
+        run: docker image build -t ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:${{ steps.project_version.outputs.version }} -t ${{ inputs.images }}:${{ steps.project_version.outputs.version }} .
   
       - name: "Login to GHCR"
         uses: docker/login-action@v2

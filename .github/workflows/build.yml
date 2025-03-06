@@ -1,13 +1,25 @@
 name: Build
 
-on: [ push, pull_request, workflow_dispatch ]
+#on: [ push, pull_request, workflow_dispatch ]
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      images:
+        description: 'Images to push'
+        required: false
+        type: string
+  #push:
+  #  branches:
+  #    - 'main'
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: "Node Cache"
         uses: actions/cache@v3
@@ -33,17 +45,31 @@ jobs:
           distribution: 'adopt'
           cache: 'maven'
 
-      - name: "Maven and Node Tests"
-        run: mvn clean test jacoco:report coveralls:report -DdryRun=true -DtestClient
+      - name: Get project version from POM
+        id: project_version
+        run: echo "VERSION=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`" >> $GITHUB_OUTPUT
+  
+      - name: Maven Publish
+        # if: ${{ endsWith(steps.project_version.outputs.version, '-SNAPSHOT') }}
+        run: mvn -B -ntp clean deploy
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
 
-      - name: "Combine Coverage"
-        run: |
-          cat coverage/lcov.info | node node_modules/coveralls/bin/coveralls.js -s > coverage/coveralls.json
-          jq 'reduce inputs as $i (.; .source_files += $i.source_files)' target/coveralls.json coverage/coveralls.json > coveralls.json
-
-      - name: "Send to Coveralls"
-        uses: MikeEdgar/github-action@raw_coverage_file
+      - name: Docker Build
+        run: docker image build -t ${{ inputs.images }} .
+  
+      - name: Login to GHCR
+        uses: docker/login-action@v2
         with:
-          github-token: ${{ secrets.github_token }}
-          path-to-file: './coveralls.json'
-          coverage-format: raw
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+  
+      - name: Push Docker images to GHCR
+        run: |
+          for name in ${{ inputs.images }}
+          do
+            docker push $name:${{ steps.project_version.outputs.version }}
+          done

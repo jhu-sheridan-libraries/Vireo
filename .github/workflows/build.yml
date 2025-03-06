@@ -73,5 +73,5 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
   
       - name: "Push Docker images to GHCR"
-        run:  docker push ${{ inputs.images }}:${{ steps.project_version.outputs.version }}
+        run:  docker push ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:${{ steps.project_version.outputs.version }}
   

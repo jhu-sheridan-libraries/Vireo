@@ -38,8 +38,11 @@
 
   <!-- Content placed here will appear on every page -->
   <main>
-    <nav class="navbar navbar-default">
-      <div class="container-fluid" ng-controller="ApplicationAuthenticationController">
+    <nav class="navbar navbar-default" ng-controller="HeaderController">
+      <div class="container-fluid navbar-flex" ng-controller="ApplicationAuthenticationController">
+          <a class="pull-left" th:href="${#strings.isEmpty(base) ? '/' : base}">
+            <img style="width: 250px; padding: 4px;" ng-src="{{logoImage()}}" alt="Thesis Submission Portal Home" />
+          </a>
 
         <div class="navbar-header">
           <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
@@ -113,9 +116,6 @@
     <header class="container-fluid site-title" ng-controller="HeaderController">
       <div class="container">
         <div class="row">
-          <a class="pull-left" th:href="${#strings.isEmpty(base) ? '/' : base}">
-            <img style="max-height: 65px;" ng-src="{{logoImage()}}" alt="Thesis Submission Portal Home" />
-          </a>
           <ul ng-if="activeAdminSection()" class="tab-nav nav navbar-nav navbar-right hidden-xs">
             <li ng-class="{'active': activeTab('/admin/list')}">
               <a href="admin/list">List</a>
@@ -140,7 +140,7 @@
     <alerts seconds="45" channels="auth/register" types="SUCCESS"></alerts>
     <alerts seconds="45" channels="organization/delete" types="SUCCESS"></alerts>
 
-    <div class="container-fluid main" aria-live="assertive" aria-atomic="true">
+    <div class="container-fluid main">
       <div ng-view class="view"></div>
     </div>
 
@@ -164,11 +164,7 @@
         <li>
           <a href="{{accessibility}}" ng-attr-aria-label="{{accessibility_label}}" ng-attr-aria-hidden="{{accessibility_hidden}}">Accessibility</a>
         </li>
-        <li>
-          <a href="https://github.com/TexasDigitalLibrary/Vireo" title="Vireo GitHub Repository" target="_blank">
-            <img style="max-height: 30px;" src="resources/images/footer-logo.png" alt="Vireo Logo" />
-          </a>
-        </ul>
+      </ul>
     </div>
   </footer>
 

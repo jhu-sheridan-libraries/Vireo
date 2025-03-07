@@ -12,7 +12,7 @@ on:
           - vireo-test
         default: 'vireo'
       environment:
-        description: 'dev or prod'
+        description: 'stage or prod'
         required: true
         type: environment
 
@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get project version from POM
+      - name: "Get project version from POM"
         id: project_version
         run: echo "VERSION=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`" >> $GITHUB_OUTPUT
 

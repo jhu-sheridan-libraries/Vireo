@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'dev or prod'
+        description: 'stage or prod'
         required: true
         type: environment
 

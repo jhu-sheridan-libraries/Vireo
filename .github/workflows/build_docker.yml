@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       images:
-        description: 'Image to push'
+        description: 'image to push'
         required: true
         type: choice
         options:
           - vireo
-          - vireo-test
-        default: 'vireo'
+          - vireo-dev
+        default: 'vireo-dev'
       environment:
         description: 'stage or prod'
         required: true

@@ -1,0 +1,39 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      images:
+        description: 'image to push'
+        required: true
+        type: choice
+        options:
+          - vireo
+          - vireo-dev
+        default: 'vireo-dev'
+      environment:
+        description: 'stage or prod'
+        required: true
+        type: environment
+        default: 'stage'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Get project version from POM"
+        id: project_version
+        run: echo "VERSION=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`" >> $GITHUB_OUTPUT
+
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ env.VIREO_HOSTNAME }}
+          username: jhu-devops
+          key: ${{ secrets.JHU_DEVOPS_KEY }}
+          script: | 
+          docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:${{ steps.project_version.outputs.version }}
+          docker compose up --detach

@@ -18,7 +18,7 @@ on:
         default: 'stage'
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -35,5 +35,5 @@ jobs:
           username: jhu-devops
           key: ${{ secrets.JHU_DEVOPS_KEY }}
           script: | 
-          docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:${{ steps.project_version.outputs.version }}
-          docker compose up --detach
+            docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:latest
+            docker compose up --detach

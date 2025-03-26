@@ -31,5 +31,5 @@ jobs:
           username: jhu-devops
           key: ${{ secrets.JHU_DEVOPS_KEY }}
           script: | 
-            docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:latest
-            docker run ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:latest -d -p 9000:9000 
+            docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
+            docker run ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10 -d -p 9000:9000 

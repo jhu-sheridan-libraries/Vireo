@@ -32,4 +32,4 @@ jobs:
           key: ${{ secrets.JHU_DEVOPS_KEY }}
           script: | 
             docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:latest
-            docker compose ./docker-compose.yml up --detach
+            docker compose -f docker-compose.yml up -d

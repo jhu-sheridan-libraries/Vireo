@@ -9,7 +9,7 @@ services:
   db:
     image: postgres:16
     environment:
-       - POSTGRES_DB=vireo4
+       - POSTGRES_DB=vireo
        - POSTGRES_USER=vireo
        - POSTGRES_PASSWORD=vireo
     volumes:

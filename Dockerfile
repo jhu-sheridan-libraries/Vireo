@@ -7,7 +7,7 @@ ARG APP_PATH=/var/vireo
 ARG NODE_ENV=production
 
 # Maven stage.
-FROM maven:3-eclipse-temurin-11-alpine as maven
+FROM --platform=linux/amd64 maven:3-eclipse-temurin-11-alpine as maven
 ARG USER_ID
 ARG USER_NAME
 ARG HOME_DIR
@@ -30,7 +30,7 @@ RUN mkdir -p $SOURCE_DIR && \
 
 # Upgrade the system and install dependencies.
 RUN apk -U upgrade && \
-    apk add --update --no-cache nodejs npm make g++ py3-pip
+           apk add --update --no-cache nodejs-lts npm make g++ py3-pip
 
 # Set deployment directory.
 WORKDIR $SOURCE_DIR
@@ -53,7 +53,7 @@ USER $USER_NAME
 RUN mvn package -Pproduction -Dmaven.test.skip=true
 
 # JRE Stage.
-FROM eclipse-temurin:11-alpine
+FROM --platform=linux/amd64 eclipse-temurin:11-alpine
 ARG USER_ID
 ARG USER_NAME
 ARG HOME_DIR
@@ -70,8 +70,8 @@ RUN adduser -h $HOME_DIR -u $USER_ID -G $USER_NAME -D $USER_NAME
 
 # Ensure app path directory exists and has appropriate file permissions.
 RUN mkdir -p $APP_PATH && \
-    chown $USER_ID:$USER_ID $APP_PATH && \
-    chmod g+s $APP_PATH
+    chown -R $USER_NAME:$USER_NAME $APP_PATH && \
+    chmod -R 777 $APP_PATH
 
 # Update the system and install gettext for envsubst.
 RUN apk -U upgrade && \

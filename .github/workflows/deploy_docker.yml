@@ -32,4 +32,4 @@ jobs:
           key: ${{ secrets.JHU_DEVOPS_KEY }}
           script: | 
             docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
-            docker run ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10 -d -p 9000:9000 
+            docker run ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10 -p 9000:9000 

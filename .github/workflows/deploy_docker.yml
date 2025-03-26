@@ -19,14 +19,10 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, ubuntu-latest]
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: "Get project version from POM"
-        id: project_version
-        run: echo "VERSION=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`" >> $GITHUB_OUTPUT
 
       - name: executing remote ssh commands using password
         uses: appleboy/ssh-action@v1

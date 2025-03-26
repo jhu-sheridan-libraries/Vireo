@@ -27,7 +27,7 @@ jobs:
       - name: executing remote ssh commands using password
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ vars.VIREO_HOSTNAME }}
+          host: msel-vireo03.mse.jhu.edu
           username: jhu-devops
           key: ${{ secrets.JHU_DEVOPS_KEY }}
           script: | 

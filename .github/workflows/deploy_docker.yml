@@ -22,7 +22,17 @@ jobs:
     runs-on: [self-hosted]
 
     steps:
-      # - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: executing rsync as jhu-devops using secret
+        uses: burnett01/rsync-deployments@7.0.2
+        with:
+          switches: -avzr --delete
+          path: src/
+          remote_path: /home/jhu-devops/src/
+          remote_host: msel-vireo03.mse.jhu.edu
+          remote_user: jhu-devops
+          remote_key: ${{ secrets.JHU_DEVOPS_KEY }}
 
       - name: executing remote ssh commands as jhu-devops using secret
         uses: appleboy/ssh-action@v1

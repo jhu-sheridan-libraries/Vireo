@@ -28,8 +28,8 @@ jobs:
         uses: burnett01/rsync-deployments@7.0.2
         with:
           switches: -avzr --delete
-          path: src/
-          remote_path: /home/jhu-devops/src/
+          path: /
+          remote_path: /opt/vireo/
           remote_host: msel-vireo03.mse.jhu.edu
           remote_user: jhu-devops
           remote_key: ${{ secrets.JHU_DEVOPS_KEY }}
@@ -42,4 +42,7 @@ jobs:
           key: ${{ secrets.JHU_DEVOPS_KEY }}
           script: | 
             docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
-            docker run -d -p 9000:9000 ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10 
+            cd /opt/vireo/
+            cp example.env .env
+            docker-compose up
+            # docker run -d -p 9000:9000 ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10 

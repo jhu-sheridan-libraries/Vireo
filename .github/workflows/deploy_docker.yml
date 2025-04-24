@@ -46,5 +46,5 @@ jobs:
             # mkdir -p /opt/vireo
             cd vireo
             # cp ./example.env .env
-            docker-compose up
+            docker compose up
             # docker run -d -p 9000:9000 ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10 

@@ -42,9 +42,9 @@ jobs:
           key: ${{ secrets.JHU_DEVOPS_KEY }}
           script: | 
             docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
-            # wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
-            # mkdir -p /opt/vireo
-            cd vireo
-            # cp ./example.env .env
-            docker compose up
             # docker run -d -p 9000:9000 ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10 
+            # wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+            cd ./vireo
+            cp ./example.env .env
+            docker compose up
+            

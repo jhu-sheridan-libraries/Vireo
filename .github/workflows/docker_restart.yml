@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'stage or prod'
+        description: 'stage(03) or prod(05)'
         required: true
         type: environment
         default: 'stage'
@@ -12,6 +12,7 @@ on:
 jobs:
   restart:
     runs-on: [self-hosted]
+    environment: ${{ inputs.environment }}
 
     steps:
 

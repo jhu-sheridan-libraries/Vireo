@@ -17,6 +17,9 @@ on:
         type: environment
         default: 'stage'
 
+env:
+  VIREO_HOSTNAME: ${{ vars.VIREO_HOSTNAME }}
+
 jobs:
   deploy:
     runs-on: [self-hosted]
@@ -30,7 +33,7 @@ jobs:
           switches: -avzr --delete
           path: /
           remote_path: /home/jhu-devops/vireo
-          remote_host: msel-vireo03.mse.jhu.edu
+          remote_host: ${{ vars.VIREO_HOSTNAME }}
           remote_user: jhu-devops
           remote_key: ${{ secrets.JHU_DEVOPS_KEY }}
 

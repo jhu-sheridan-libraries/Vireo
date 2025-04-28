@@ -41,12 +41,13 @@ jobs:
           host: ${{ secrets.VIREO_HOSTNAME }}
           username: jhu-devops
           key: ${{ secrets.JHU_DEVOPS_KEY }}
-          script: | 
-            docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
-            # docker run -d -p 9000:9000 ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10 
-            wget https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem
-            sudo mv ./us-east-1-bundle.pem /etc/pki/ca-trust/source/
-            sudo update-ca-trust
+          script: |
             cd ./vireo
+            docker compose down
+            docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
             cp ./example.env .env
             docker compose up --detach
+            # docker run -d -p 9000:9000 ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10 
+            # wget https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem
+            # sudo mv ./us-east-1-bundle.pem /etc/pki/ca-trust/source/
+            # sudo update-ca-trust

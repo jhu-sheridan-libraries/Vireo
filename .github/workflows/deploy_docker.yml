@@ -33,14 +33,14 @@ jobs:
           switches: -avzr --delete
           path: /
           remote_path: /home/jhu-devops/vireo
-          remote_host: ${{ vars.VIREO_HOSTNAME }}
+          remote_host: ${{ vars.VIREO_HOSTNAME }}.mse.jhu.edu
           remote_user: jhu-devops
           remote_key: ${{ secrets.JHU_DEVOPS_KEY }}
 
       - name: executing remote ssh commands as jhu-devops using secret
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ vars.VIREO_HOSTNAME }}
+          host: ${{ vars.VIREO_HOSTNAME }}.mse.jhu.edu
           username: jhu-devops
           key: ${{ secrets.JHU_DEVOPS_KEY }}
           script: | 

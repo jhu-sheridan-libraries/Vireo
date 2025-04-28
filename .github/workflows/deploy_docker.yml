@@ -43,8 +43,10 @@ jobs:
           script: | 
             docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
             # docker run -d -p 9000:9000 ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10 
-            # wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+            wget https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem
+            mv ./us-east-1-bundle.pem /etc/pki/ca-trust/source/whitelist/
+            update-ca-trust
             cd ./vireo
             cp ./example.env .env
-            docker compose up
+            docker compose up --detach
             

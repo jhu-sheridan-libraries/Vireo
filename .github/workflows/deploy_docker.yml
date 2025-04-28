@@ -37,7 +37,7 @@ jobs:
       - name: executing remote ssh commands as jhu-devops using secret
         uses: appleboy/ssh-action@v1
         with:
-          host: msel-vireo03.mse.jhu.edu
+          host: ${{ vars.VIREO_HOSTNAME }}
           username: jhu-devops
           key: ${{ secrets.JHU_DEVOPS_KEY }}
           script: | 
@@ -49,4 +49,3 @@ jobs:
             cd ./vireo
             cp ./example.env .env
             docker compose up --detach
-            

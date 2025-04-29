@@ -46,6 +46,7 @@ jobs:
             docker compose down
             docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
             cp ./example.env .env
+            pg_restore --host=vireo-dev-1.chohpaicaoek.us-east-1.rds.amazonaws.com --port=5432 --dbname=vireo --username=postgres -P ${{ secrets.DB_PASSWORD }} /home/vireo/vireo4-april-29-2025.dump
             docker compose up --detach
             # docker run -d -p 9000:9000 ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10 
             # wget https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem

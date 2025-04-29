@@ -30,7 +30,7 @@ jobs:
         with:
           switches: -avzr --delete
           path: /
-          remote_path: /home/jhu-devops/vireo
+          remote_path: /home/vireo
           remote_host: ${{ secrets.VIREO_HOSTNAME }}
           remote_user: jhu-devops
           remote_key: ${{ secrets.JHU_DEVOPS_KEY }}

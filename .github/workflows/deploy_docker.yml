@@ -30,7 +30,7 @@ jobs:
         with:
           switches: -avzr --delete
           path: /
-          remote_path: /home/vireo
+          remote_path: /opt/vireo/Vireo
           remote_host: ${{ secrets.VIREO_HOSTNAME }}
           remote_user: jhu-devops
           remote_key: ${{ secrets.JHU_DEVOPS_KEY }}
@@ -42,7 +42,7 @@ jobs:
           username: jhu-devops
           key: ${{ secrets.JHU_DEVOPS_KEY }}
           script: |
-            cd ./vireo
+            cd /opt/vireo/Vireo
             docker compose down
             docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
             cp ./example.env .env

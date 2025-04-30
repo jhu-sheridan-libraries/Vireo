@@ -37,14 +37,17 @@ jobs:
 
       - name: executing remote ssh commands as jhu-devops using secret
         uses: appleboy/ssh-action@v1
+        env:
+          PGPASSWORD: ${{ secrets.DB_PASSWORD}}
         with:
           host: ${{ secrets.VIREO_HOSTNAME }}
           username: jhu-devops
           key: ${{ secrets.JHU_DEVOPS_KEY }}
+          envs: PGPASSWORD
           script: |
             cd /opt/vireo
             ls -la
-            PGPASSWORD=${{ secrets.DB_PASSWORD}} /usr/bin/psql --host=vireo-dev-1.chohpaicaoek.us-east-1.rds.amazonaws.com --port=5432 --dbname=vireo4 --username=postgres < /opt/vireo/vireo4.dump
+            /usr/bin/psql --host=vireo-dev-1.chohpaicaoek.us-east-1.rds.amazonaws.com --port=5432 --dbname=vireo4 --username=postgres < /opt/vireo/vireo4.dump
             cd ./Vireo
             docker compose down
             cp ./example.env .env

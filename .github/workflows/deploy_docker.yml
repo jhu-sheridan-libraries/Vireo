@@ -44,11 +44,12 @@ jobs:
           script: |
             cd /opt/vireo
             ls -la
-            cd Vireo
+            cd ./Vireo
             docker compose down
             docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
             # cp ./example.env .env
-            /usr/bin/pg_restore --host=vireo-dev-1.chohpaicaoek.us-east-1.rds.amazonaws.com --port=5432 --dbname=vireo --username=postgres -P '${{ secrets.DB_PASSWORD }}' /opt/vireo/vireo4.dump                                                                          nn .dump
+            export PGPASSWORD=${{ secrets.DB_PASSWORD}}
+            /usr/bin/pg_restore --host=vireo-dev-1.chohpaicaoek.us-east-1.rds.amazonaws.com --port=5432 --dbname=vireo --username=postgres /opt/vireo/vireo4.dump                                                                          nn .dump
             docker compose up --detach
             # docker run -d -p 9000:9000 ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10 
             # wget https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem

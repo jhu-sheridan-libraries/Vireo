@@ -44,8 +44,7 @@ jobs:
           script: |
             cd /opt/vireo
             ls -la
-            export PGPASSWORD=${{ secrets.DB_PASSWORD}}
-            /usr/bin/psql --host=vireo-dev-1.chohpaicaoek.us-east-1.rds.amazonaws.com --port=5432 --dbname=vireo4 --username=postgres < /opt/vireo/vireo4.dump
+            PGPASSWORD=${{ secrets.DB_PASSWORD}} /usr/bin/psql --host=vireo-dev-1.chohpaicaoek.us-east-1.rds.amazonaws.com --port=5432 --dbname=vireo4 --username=postgres < /opt/vireo/vireo4.dump
             cd ./Vireo
             docker compose down
             cp ./example.env .env

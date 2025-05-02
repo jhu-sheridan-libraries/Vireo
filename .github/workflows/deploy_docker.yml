@@ -49,6 +49,7 @@ jobs:
             # /usr/bin/psql --host=vireo-dev-1.chohpaicaoek.us-east-1.rds.amazonaws.com --port=5432 --dbname=vireo4 --username=postgres < /opt/vireo/vireo4.dump
             cd /opt/vireo/Vireo
             docker compose down
+            sudo ./init-letsencrypt.sh
             cp ./example.env .env
             docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
             docker compose up --detach

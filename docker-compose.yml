@@ -56,10 +56,15 @@ services:
       - /opt/vireo/nginx:/etc/nginx/conf.d
       - /opt/vireo/certbot/conf:/etc/letsencrypt
       - /opt/vireo/www:/var/www/certbot
+    networks:
+      - net
+
   certbot:
     image: certbot/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     volumes:
       - /opt/vireo/certbot/conf:/etc/letsencrypt
       - /opt/vireo/certbot/www:/var/www/certbot
+    networks:
+      - net
     

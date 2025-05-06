@@ -53,7 +53,7 @@ jobs:
             cd /opt/vireo/Vireo
             docker compose down
             # sudo ./init-letsencrypt.sh
-            # cp ./example.env .env
+            cp ./example.env .env
             docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
             docker compose up --detach
             # docker exec -i vireo-db-1 psql -U vireo -d vireo4 < /opt/vireo/vireo4.dump

@@ -10,13 +10,17 @@ on:
         options:
           - vireo
           - vireo-dev
-        default: 'vireo-dev'
+        default: 'vireo'
       environment:
         description: 'stage(03) or prod(05)'
         required: true
         type: environment
         default: 'stage'
-
+      version_tag:
+        description: 'The Docker tag or version to deploy (e.g., 4.2.10)'
+        required: true
+        type: string
+        default: 'latest' # Or you could make it required without a default
 jobs:
   deploy:
     runs-on: [self-hosted]
@@ -53,11 +57,11 @@ jobs:
             cd /opt/vireo/Vireo
             docker compose down
             # sudo ./init-letsencrypt.sh
-            cp ./example.env .env
-            docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
+            cp ../.env .env
+            docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:${{ inputs.version_tag }}
             docker compose up --detach
             # docker exec -i vireo-db-1 psql -U vireo -d vireo4 < /opt/vireo/vireo4.dump
-            # docker run -d -p 9000:9000 ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10 
+            # docker run -d -p 9000:9000 ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:${{ inputs.version_tag }}
             # wget https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem
             # sudo mv ./us-east-1-bundle.pem /etc/pki/ca-trust/source/
             # sudo update-ca-trust

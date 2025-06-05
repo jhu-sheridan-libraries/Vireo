@@ -48,7 +48,7 @@ spring:
 
     # PostgreSQL
     ## Switch to RDS here
-    url: jdbc:postgresql://localhost:5432/vireo4
+  #  url: jdbc:postgresql://localhost:5432/vireo4
     driverClassName: org.postgresql.Driver
 
     # MySQL
@@ -56,8 +56,8 @@ spring:
     #driverClassName: com.mysql.jdbc.Driver
 
     # database username and password
-    username: vireo
-    password: vireo
+   # username: vireo
+   # password: vireo
 
   jpa:
     # H2
@@ -115,7 +115,7 @@ info:
 
 
 app:
-  url: https://vireo-dev.library.jhu.edu
+#  url: https://vireo-dev.library.jhu.edu
 
 
 
@@ -135,7 +135,7 @@ app:
   # VUG ETD-Centric config
   # Comma delimited names of the document types that are to be renamed on upload as LASTNAME-DOCUMENTTYPE-YEAR.pdf as per VUG recommendations.
   # Leave blank to not rename any.
-  documentType.rename:
+  documentType.rename: PRIMARY
 
   # edu.tamu.weaver.auth.service.UserCredentialsService
   authority.admins: jrm@jhu.edu, donrichards@jhu.edu
@@ -143,9 +143,9 @@ app:
 
   security:
     # edu.tamu.weaver.auth.service.CryptoService
-    secret: 9QRMirNPjAXA9p1Ljn9EKYzUQldajESZ
+  #  secret: 9QRMirNPjAXA9p1Ljn9EKYzUQldajESZ
     # edu.tamu.weaver.filter.CorsFilter
-    allow-access: https://vireo-dev.library.jhu.edu
+   # allow-access: https://vireo-dev.library.jhu.edu
 
   # edu.tamu.weaver.email.config.WeaverEmailConfig
   email:
@@ -186,7 +186,7 @@ app:
 # edu.tamu.weaver.token.service.TokenService
 auth:
   security.jwt:
-    secret: 9QRMirNPjAXA9p1Ljn9EKYzUQldajESZ
+  #  secret: 9QRMirNPjAXA9p1Ljn9EKYzUQldajESZ
     issuer: localhost
     duration: 5
 

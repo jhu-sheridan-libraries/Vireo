@@ -31,6 +31,9 @@ vireo.directive("field", function ($controller, $filter, $q, $timeout, Controlle
             $scope.typeAheads = {};
 
             var save = function (fieldValue) {
+                if (fieldValue._pendingRemove) {
+                    return;
+                }
                 $scope.submission.saveDatePopupFieldValueWorkaround(fieldValue);
 
                 return $q(function (resolve) {
@@ -135,11 +138,21 @@ vireo.directive("field", function ($controller, $filter, $q, $timeout, Controlle
 
             $scope.removeFieldValue = function (fieldValue) {
                 if (fieldValue.id === undefined || fieldValue.id === null) {
+                    fieldValue._pendingRemove = true;
                     $scope.submission.removeUnsavedFieldValue(fieldValue);
+                    refreshFieldValues();
                 } else {
                     fieldValue.updating = true;
                     $scope.submission.removeFieldValue(fieldValue).then(function () {
                         fieldValue.updating = false;
+                        var idx = $scope.submission.fieldValues.indexOf(fieldValue);
+                        if (idx !== -1) {
+                            $scope.submission.fieldValues.splice(idx, 1);
+                        }
+                        refreshFieldValues();
+                    }).catch(function(error) {
+                        fieldValue.updating = false;
+                        console.error('Error removing field value:', error);
                     });
                 }
             };

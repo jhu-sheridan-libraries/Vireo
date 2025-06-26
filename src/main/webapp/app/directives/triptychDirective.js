@@ -6,6 +6,7 @@ vireo.directive("triptych", function () {
         transclude: true,
         scope: true,
         controller: function ($controller, $q, $scope, $timeout, Organization, OrganizationRepo) {
+
             // Lock used to prevent multiple runs (and therefore resulting performance problems) of panel refreshing during timeout.
             var repoListenLock = false;
 
@@ -312,10 +313,9 @@ vireo.directive("triptych", function () {
 
             var setVisibility = function (panel) {
                 var closingPromise;
-                var visible = (panel.organization &&
+                var visible = panel.organization &&
                     panel.organization.childrenOrganizations &&
-                    panel.organization.childrenOrganizations.length > 0) || panel.parent === undefined;
-
+                    panel.organization.childrenOrganizations.length > 0;
                 if (panel.visible && !visible) {
                     closingPromise = close(panel);
                 }
@@ -341,6 +341,7 @@ vireo.directive("triptych", function () {
                     }
                 }
                 if (panel.parent ? (panel.parent.selected !== undefined && panel.parent.selected.organization.id === panel.organization.id) && !panel.visible && visible : !panel.visible && visible) {
+
                     open(panel, closingPromise);
                 }
             };
@@ -358,12 +359,11 @@ vireo.directive("triptych", function () {
                 }
             };
 
-            // Auto-open the first organization panel on page load
-            $timeout(function() {
-                if ($scope.organizations && $scope.organizations.length > 0) {
-                    $scope.selectOrganization($scope.organizations[0]);
-                }
-            }, 1000);
+            $scope.ready = $q.all([OrganizationRepo.ready()]);
+
+            $scope.ready.then(function () {
+                $scope.selectOrganization($scope.organizations[0]);
+            });
 
         },
         link: function ($scope, element, attr) {
@@ -371,4 +371,3 @@ vireo.directive("triptych", function () {
         }
     };
 });
-

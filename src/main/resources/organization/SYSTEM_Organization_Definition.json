@@ -1039,7 +1039,7 @@
     }
   ],
   "parentOrganization": null,
-  "childrenOrganizations": null,
+  "childrenOrganizations": [],
   "emails": ["etd-support@jhu.edu"],
   "emailWorkflowRules": [
     {

@@ -60,7 +60,7 @@
                   <dim:field
                     th:each="fv : ${ METS_FIELD_VALUES }"
                     th:if = "${ fv.getFieldPredicate().getQualifier()=='college'}"
-                    mdschema="thesis" element="degree" qualifier="grantor">
+                    mdschema="thesis" element="degree" qualifier="grantor"
                     th:text="${ fv.value }">
                   </dim:field>
 

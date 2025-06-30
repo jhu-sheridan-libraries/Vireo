@@ -28,7 +28,8 @@
   xmlns="http://www.loc.gov/METS/"
   xmlns:xlink="http://www.w3.org/1999/xlink"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://www.loc.gov/METS/ http://www.loc.gov/standards/mets/mets.xsd">
+  xsi:schemaLocation="http://www.loc.gov/METS/ http://www.loc.gov/standards/mets/mets.xsd"
+  xmlns:th="http://www.w3.org/2001/XMLSchema">
     <metsHdr th:attr="CREATEDATE=${ TIME }">
         <agent ROLE="CREATOR" TYPE="OTHER">
             <name th:text="${ AGENT }"></name>
@@ -48,7 +49,8 @@
                     <!-- dc, thesis, and local schema -->
                     <dim:field
                       th:each="fv : ${ METS_FIELD_VALUES }"
-                      th:if = "${ fv.getFieldPredicate().getQualifier()!='issued'}"
+                      th:if = "${ fv.getFieldPredicate().getQualifier()!='issued' AND
+                      fv.getFieldPredicate().getQualifier()!='college'}"
                       th:attr="mdschema=${ fv.getFieldPredicate().getSchema() },
                                element=${ fv.getFieldPredicate().getElement() },
                                qualifier=${ fv.getFieldPredicate().getQualifier() }"

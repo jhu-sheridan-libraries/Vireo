@@ -61,6 +61,7 @@
                     th:each="fv : ${ METS_FIELD_VALUES }"
                     th:if = "${ fv.getFieldPredicate().getQualifier()=='college'}"
                     mdschema="thesis" element="degree" qualifier="grantor">
+                    th:text="${ fv.value }">
                   </dim:field>
 
                     <!-- dc.date.issued in proper format -->

@@ -57,12 +57,13 @@
                       th:text="${ fv.value }">
                     </dim:field>
 
-                  <dim:field
-                    th:each="fv : ${ METS_FIELD_VALUES }"
-                    th:if = "${ fv.getFieldPredicate().getQualifier()=='college'}"
-                    mdschema="thesis" element="degree" qualifier="grantor"
-                    th:text="${ fv.value }">
-                  </dim:field>
+                    <!-- thesis.degree.grantor = College -->
+                    <dim:field
+                      th:each="fv : ${ METS_FIELD_VALUES }"
+                      th:if = "${ fv.getFieldPredicate().getQualifier()=='college'}"
+                      mdschema="thesis" element="degree" qualifier="grantor"
+                      th:text="${ fv.value }">
+                    </dim:field>
 
                     <!-- dc.date.issued in proper format -->
                     <dim:field
@@ -71,12 +72,13 @@
                         th:text="${GRADUATION_YEAR_MONTH}">
                     </dim:field>
 
-                    <!-- thesis.degree.grantor = College -->
+                    <!-- thesis.degree.grantor = College
                     <dim:field
                       th:if="${ DEGREE_COLLEGE != null }"
                       mdschema="thesis" element="degree" qualifier="grantor"
                       th:text="${DEGREE_COLLEGE}">
-                    </dim:field>
+                    </dim:field> -->
+
                     <!-- dc.publisher = Global configuration setting for grantor -->
                     <dim:field
                       th:if="${ GRANTOR != null }"
@@ -102,7 +104,11 @@
                     </dim:field>
 
                     <!-- dc.identifier.uri == Deposit ID, this would only be available when re-depositing -->
-                    <dim:field mdschema="dc" element="identifier" qualifier="uri" th:text="${DEPOSIT_URL}"></dim:field>
+                    <dim:field
+                      th:if="${ DEPOSIT_URL != null }"
+                      mdschema="dc" element="identifier" qualifier="uri"
+                      th:text="${DEPOSIT_URL}">
+                    </dim:field>
 
                     <!-- dc.type.material = "text" // constant -->
                     <dim:field mdschema="dc" element="type" qualifier="material">text</dim:field>

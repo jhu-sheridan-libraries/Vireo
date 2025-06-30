@@ -72,11 +72,11 @@
                         th:text="${GRADUATION_YEAR_MONTH}">
                     </dim:field>
 
-                    <!-- thesis.degree.grantor = College
+                    <!-- thesis.degree.grantor - global grantor -->
                     <dim:field
-                      th:if="${ DEGREE_COLLEGE != null }"
+                      th:if="${ GRANTOR != null }"
                       mdschema="thesis" element="degree" qualifier="grantor"
-                      th:text="${DEGREE_COLLEGE}">
+                      th:text="${GRANTOR}">
                     </dim:field> -->
 
                     <!-- dc.publisher = Global configuration setting for grantor -->

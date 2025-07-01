@@ -25,4 +25,4 @@ jobs:
           key: ${{ secrets.JHU_DEVOPS_KEY }}
           envs: PGPASSWORD
           script: |
-            /usr/bin/psql --host=${{ secrets.DB_HOST }} --port=5432 --dbname=vireo4 --username=${{ secrets.DB_UBSER }} < /opt/vireo/vireo4.dump
+            /usr/bin/psql --host=${{ secrets.DB_HOST }} --port=5432 --dbname=vireo4 --username=${{ secrets.DB_USER }} < /opt/vireo/vireo4.dump

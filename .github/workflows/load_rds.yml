@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'stage(02) or prod(05)'
+        description: 'stage(02) or prod(03)'
         required: true
         type: environment
         default: 'stage'
@@ -25,4 +25,4 @@ jobs:
           key: ${{ secrets.JHU_DEVOPS_KEY }}
           envs: PGPASSWORD
           script: |
-            /usr/bin/psql --host=vireo-dev-1.chohpaicaoek.us-east-1.rds.amazonaws.com --port=5432 --dbname=vireo4 --username=postgres < /opt/vireo/vireo4.dump
+            /usr/bin/psql --host=${{ secrets.DB_HOST }} --port=5432 --dbname=vireo4 --username=${{ secrets.DB_UBSER }} < /opt/vireo/vireo4.dump

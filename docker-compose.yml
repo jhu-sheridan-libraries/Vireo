@@ -18,7 +18,7 @@ services:
     volumes:
       - /opt/vireo:${APP_PATH}
     ports:
-      - 9000:9000
+      - 9000:9001
     depends_on:
       - httpd
     networks:

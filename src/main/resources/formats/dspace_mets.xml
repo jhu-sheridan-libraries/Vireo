@@ -60,12 +60,21 @@
                     <!-- thesis.degree.grantor = College -->
                     <dim:field
                       th:each="fv : ${ METS_FIELD_VALUES }"
-                      th:if = "${ fv.getFieldPredicate().getQualifier()=='college'}"
-                      mdschema="thesis" element="degree" qualifier="grantor"
+                      th:if = "${ fv.getFieldPredicate() =='keywords'}"
+                      mdschema="dc" element="subject"
                       th:text="${ fv.value }">
                     </dim:field>
 
-                    <!-- dc.date.issued in proper format -->
+                  <!-- thesis.degree.grantor = College -->
+                  <dim:field
+                    th:each="fv : ${ METS_FIELD_VALUES }"
+                    th:if = "${ fv.getFieldPredicate().getQualifier()=='college'}"
+                    mdschema="thesis" element="degree" qualifier="grantor"
+                    th:text="${ fv.value }">
+                  </dim:field>
+
+
+                  <!-- dc.date.issued in proper format -->
                     <dim:field
                       th:if="${ GRADUATION_YEAR_MONTH != null }"
                         mdschema="dc" element="date" qualifier="issued"

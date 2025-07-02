@@ -61,7 +61,7 @@
                     <!-- keywords presented as dc.subject -->
                     <dim:field
                       th:each="fv : ${ METS_FIELD_VALUES }"
-                      th:if = "${ fv.getFieldPredicate().getValue() == 'keywords'}"
+                      th:if = "${ fv.getFieldPredicate().getSchema() == 'keywords'}"
                       mdschema="dc" element="subject"
                       th:text="${ fv.value }">
                     </dim:field>

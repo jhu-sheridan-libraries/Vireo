@@ -50,17 +50,18 @@
                     <dim:field
                       th:each="fv : ${ METS_FIELD_VALUES }"
                       th:if = "${ fv.getFieldPredicate().getQualifier()!='issued' AND
-                      fv.getFieldPredicate().getQualifier()!='college'}"
+                      fv.getFieldPredicate().getQualifier()!='college' AND
+                      fv.getFieldPredicate().getQualifier()!='keyword' }"
                       th:attr="mdschema=${ fv.getFieldPredicate().getSchema() },
                                element=${ fv.getFieldPredicate().getElement() },
                                qualifier=${ fv.getFieldPredicate().getQualifier() }"
                       th:text="${ fv.value }">
                     </dim:field>
 
-                    <!-- thesis.degree.grantor = College -->
+                    <!-- dc.subject, from local.subject.keyword -->
                     <dim:field
                       th:each="fv : ${ METS_FIELD_VALUES }"
-                      th:if = "${ fv.getFieldPredicate() =='keywords'}"
+                      th:if = "${ fv.getFieldPredicate() =='keyword'}"
                       mdschema="dc" element="subject"
                       th:text="${ fv.value }">
                     </dim:field>

@@ -50,18 +50,17 @@
                     <dim:field
                       th:each="fv : ${ METS_FIELD_VALUES }"
                       th:if = "${ fv.getFieldPredicate().getQualifier()!='issued' AND
-                      fv.getFieldPredicate().getQualifier()!='college' AND
-                      fv.getFieldPredicate().getQualifier()!='other'}"
+                      fv.getFieldPredicate().getQualifier()!='college' }"
                       th:attr="mdschema=${ fv.getFieldPredicate().getSchema() },
                                element=${ fv.getFieldPredicate().getElement() },
                                qualifier=${ fv.getFieldPredicate().getQualifier() }"
                       th:text="${ fv.value }">
                     </dim:field>
 
-                    <!-- dc.subject, from dc.subject.other -->
+                    <!-- keywords presented as dc.subject -->
                     <dim:field
                       th:each="fv : ${ METS_FIELD_VALUES }"
-                      th:if = "${ fv.getFieldPredicate().getQualifier() == 'other'}"
+                      th:if = "${ fv.getFieldPredicate() == 'keywords'}"
                       mdschema="dc" element="subject"
                       th:text="${ fv.value }">
                     </dim:field>

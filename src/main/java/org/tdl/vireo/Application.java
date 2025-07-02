@@ -19,6 +19,7 @@ import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.core.io.Resource;
 import org.tdl.vireo.model.converter.CryptoConverter;
+import io.github.cdimascio.dotenv.Dotenv;
 
 @SpringBootApplication
 @ComponentScan(basePackages = { "edu.tamu.*", "org.tdl.*" }, excludeFilters = { @Filter(type = FilterType.REGEX, pattern="edu.tamu.weaver.wro.service.*") })
@@ -44,6 +45,25 @@ public class Application extends SpringBootServletInitializer {
     }
 
     public static void main(String[] args) {
+        // Load .env file if it exists
+        try {
+            Dotenv dotenv = Dotenv.configure()
+                .directory("./")
+                .ignoreIfMissing()
+                .load();
+            
+            // Set system properties from .env file
+            dotenv.entries().forEach(entry -> {
+                if (System.getProperty(entry.getKey()) == null) {
+                    System.setProperty(entry.getKey(), entry.getValue());
+                }
+            });
+            
+            logger.info("Loaded .env file with {} variables", dotenv.entries().size());
+        } catch (Exception e) {
+            logger.warn("Could not load .env file: {}", e.getMessage());
+        }
+        
         SpringApplication.run(Application.class, args);
     }
 

@@ -61,7 +61,7 @@
                     <!-- dc.subject, from dc.subject.other -->
                     <dim:field
                       th:each="fv : ${ METS_FIELD_VALUES }"
-                      th:if = "${ fv.getFieldPredicate().qualifier() == 'other'}"
+                      th:if = "${ fv.getFieldPredicate().getQualifier() == 'other'}"
                       mdschema="dc" element="subject"
                       th:text="${ fv.value }">
                     </dim:field>

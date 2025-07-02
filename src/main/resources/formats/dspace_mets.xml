@@ -51,7 +51,7 @@
                       th:each="fv : ${ METS_FIELD_VALUES }"
                       th:if = "${ fv.getFieldPredicate().getQualifier()!='issued' AND
                       fv.getFieldPredicate().getQualifier()!='college' AND
-                      fv.getFieldPredicate().getValue() != 'keywords'}"
+                      fv.getFieldPredicate().getSchema() != 'keywords'}"
                       th:attr="mdschema=${ fv.getFieldPredicate().getSchema() },
                                element=${ fv.getFieldPredicate().getElement() },
                                qualifier=${ fv.getFieldPredicate().getQualifier() }"

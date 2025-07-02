@@ -15,4 +15,5 @@ public enum DSpaceMETSKey {
     GRADUATION_YEAR_MONTH,
     GRANTOR,
     EMBARGO_LIFT_DATE,
+    KEYWORDS,
 }

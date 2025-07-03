@@ -53,6 +53,7 @@ jobs:
             docker compose down
             cp ../.env .env
             cp ../application.yml ./src/main/resources/application.yml
+            chown -R vireo:vireo /opt/vireo/Vireo
             docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
             #docker compose up --detach
             # wget https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem

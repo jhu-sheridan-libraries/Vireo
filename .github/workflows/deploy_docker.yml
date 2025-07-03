@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy to VM
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ on:
           - vireo-dev
         default: 'vireo-dev'
       environment:
-        description: 'stage(03) or prod(05)'
+        description: 'stage(02) or prod(03)'
         required: true
         type: environment
         default: 'stage'
@@ -49,15 +49,12 @@ jobs:
           key: ${{ secrets.JHU_DEVOPS_KEY }}
           envs: PGPASSWORD, SPRING_DATASOURCE_URL, SPRING_DATASOURCE_PASSWORD
           script: |
-            # /usr/bin/psql --host=vireo-dev-1.chohpaicaoek.us-east-1.rds.amazonaws.com --port=5432 --dbname=vireo4 --username=postgres < /opt/vireo/vireo4.dump
             cd /opt/vireo/Vireo
             docker compose down
-            # sudo ./init-letsencrypt.sh
-            cp ./example.env .env
+            cp ../.env .env
+            cp ../application.yml ./src/main/resources/application.yml
             docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
-            docker compose up --detach
-            # docker exec -i vireo-db-1 psql -U vireo -d vireo4 < /opt/vireo/vireo4.dump
-            # docker run -d -p 9000:9000 ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10 
+            #docker compose up --detach
             # wget https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem
             # sudo mv ./us-east-1-bundle.pem /etc/pki/ca-trust/source/
             # sudo update-ca-trust

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'stage(03) or prod(05)'
+        description: 'stage(02) or prod(03)'
         required: true
         type: environment
         default: 'stage'

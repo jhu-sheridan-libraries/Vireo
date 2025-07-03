@@ -1,0 +1,23 @@
+name: Dump PROD Postgres
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: [self-hosted]
+
+    steps:
+      - name: executing remote ssh command psql as jhu-devops using secrets
+        uses: appleboy/ssh-action@v1
+        env:
+          PGPASSWORD: vireo
+        with:
+          host: msel-vireo01.mse.jhu.edu
+          username: jhu-devops
+          key: ${{ secrets.JHU_DEVOPS_KEY }}
+          envs: PGPASSWORD
+          script: |
+            psql -U vireo -d vireo4 > /opt/vireo/vireo4.dump
+            # docker exec -i vireo-db-1 psql -U vireo -d vireo4 > /opt/vireo/vireo4.dump
+            # /usr/bin/psql --host=vireo-dev-1.chohpaicaoek.us-east-1.rds.amazonaws.com --port=5432 --dbname=vireo4 --username=postgres < /opt/vireo/vireo4-transfer.dump

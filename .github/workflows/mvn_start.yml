@@ -1,4 +1,4 @@
-name: Restart Docker
+name: Start Maven
 
 on:
   workflow_dispatch:
@@ -24,5 +24,6 @@ jobs:
           key: ${{ secrets.JHU_DEVOPS_KEY }}
           script: | 
             cd /opt/vireo/Vireo
-            docker compose restart
+            mvn clean spring-boot:run & 
+            # todo: daemonize
             

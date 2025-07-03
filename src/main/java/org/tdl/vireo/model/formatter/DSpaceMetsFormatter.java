@@ -68,7 +68,8 @@ public class DSpaceMetsFormatter extends AbstractFormatter {
                 context.setVariable(key.name(), submission.getFieldValues().parallelStream().filter(new Predicate<FieldValue>() {
                     @Override
                     public boolean test(FieldValue fv) {
-                        return fv.getFieldPredicate().getSchema().equals("dc") || fv.getFieldPredicate().getSchema().equals("thesis") || fv.getFieldPredicate().getSchema().equals("local");
+                        return fv.getFieldPredicate().getSchema().equals("dc") || fv.getFieldPredicate().getSchema().equals("thesis") ||
+                               fv.getFieldPredicate().getSchema().equals("local") || fv.getFieldPredicate().getSchema().equals("keywords");
                     }
                 }).collect(Collectors.toList()));
                 break;
@@ -84,8 +85,6 @@ public class DSpaceMetsFormatter extends AbstractFormatter {
             case EMBARGO_LIFT_DATE:
                 context.setVariable(key.name(), submissionHelperUtility.getEmbargoLiftDate());
                 break;
-            case KEYWORDS:
-                context.setVariable(key.name(), submissionHelperUtility.getKeywordFieldValues());
             default:
                 break;
             }

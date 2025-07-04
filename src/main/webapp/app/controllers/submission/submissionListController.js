@@ -204,7 +204,6 @@ vireo.controller("SubmissionListController", function (NgTableParams, $controlle
             return $scope.activeFilters.namedSearchFilters.filter((nsf) => nsf.filterValues.indexOf(value) >= 0).length == 0;
         };
 
-        var degrees = DegreeRepo.getAll();
         var assignableUsers = UserRepo.getAssignableUsers(0, 0);
         var savedFilters = SavedFilterRepo.getAll();
         var emailTemplates = EmailTemplateRepo.getAll();
@@ -663,8 +662,7 @@ vireo.controller("SubmissionListController", function (NgTableParams, $controlle
             "withoutActiveFilter": withoutActiveFilter,
             "defaultLimit": 3,
             "getTypeAheadByPredicateName": getTypeAheadByPredicateName,
-            "datepickerOptions": datepickerOptions,
-            "degrees": degrees
+            "datepickerOptions": datepickerOptions
         };
 
         $scope.advancedfeaturesBox = {

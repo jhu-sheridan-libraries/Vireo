@@ -2,9 +2,9 @@
   <input
     type="text"
     name="{{column.title.split(' ').join('')+'Value'}}"
-    ng-model="box[column.title.split(' ').join('')]"
+    ng-model="box[column.title.split(' ').join('')];box.addExactMatchFilter(column)"
     class="form-control"
-    uib-typeahead="word for word in box.getTypeAheadByPredicateName(column.predicate) | exactMatchFilter: $viewValue"
+    uib-typeahead="word for word in box.getTypeAheadByPredicateName(column.predicate) | filter: $viewValue "
     typeahead-wait-ms="400"
   />
 </form>

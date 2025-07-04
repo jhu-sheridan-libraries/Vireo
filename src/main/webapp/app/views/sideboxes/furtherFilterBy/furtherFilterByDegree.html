@@ -1,0 +1,7 @@
+<form ng-init="box.degreesLimit=box.defaultLimit;" name="{{'box.'+(column.title.split(' ').join(''))+'Form'}}">
+  <ul class="sidebox-list">
+    <li class="filter" ng-repeat="degree in box.degrees | limitTo:box.degreeLimit" ng-click="box[column.title.split(' ').join('')]=degrees.label;box.addExactMatchFilter(column, degrees.label);">{{degrees.label}}</li>
+    <li class="more-less" ng-click="box.degreesLimit=box.customActionDefinitions.length" ng-if="box.degreesLimit<=box.defaultLimit && box.degrees.length>box.defaultLimit">more...</li>
+    <li class="more-less" ng-click="box.degreesLimit=box.defaultLimit" ng-if="box.degreesLimit>box.defaultLimit">less...</li>
+  </ul>
+</form>

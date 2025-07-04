@@ -663,7 +663,8 @@ vireo.controller("SubmissionListController", function (NgTableParams, $controlle
             "withoutActiveFilter": withoutActiveFilter,
             "defaultLimit": 3,
             "getTypeAheadByPredicateName": getTypeAheadByPredicateName,
-            "datepickerOptions": datepickerOptions
+            "datepickerOptions": datepickerOptions,
+            "degree"; degrees
         };
 
         $scope.advancedfeaturesBox = {

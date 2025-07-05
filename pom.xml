@@ -39,6 +39,7 @@
     <!-- must be valid uri with scheme file or classpath -->
     <!-- e.g. file:/var/vireo/config, classpath:/config -->
     <config.uri>classpath:/config/</config.uri>
+    <spring.config.location>file:/opt/vireo/spring-config/</spring.config.location>
   </properties>
 
   <packaging>war</packaging>

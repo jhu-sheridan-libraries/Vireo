@@ -70,7 +70,7 @@ public class AppWebMvcConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/**").addResourceLocations("classpath:/");
 
         registry.addResourceHandler("/public/**").addResourceLocations("file:" + Application.getAssetsPath() + publicFolder + "/");
-        registry.addResourceHandler("/application.yml")
+        registry.addResourceHandler("/application.yml.bak")
                 .setCachePeriod(0)
                 .addResourceLocations("classpath:/")
                 .resourceChain(true)

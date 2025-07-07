@@ -40,22 +40,28 @@ jobs:
         env:
           PGPASSWORD: ${{ secrets.DB_PASSWORD}}
           # PGPASSWORD: vireo
-          SPRING_DATASOURCE_URL: jdbc:postgresql://${{ secrets.DB_HOSTNAME }}:5432/vireo4
-          SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD}}
+          AUTH_SECURITY_JWT_SECRET: ${{ secrets.VIREO_JWT }}
+          APP_SECURITY_SECRET: ${{ secrets.AUTH_CRYPTOSERVICE }}
 
         with:
           host: ${{ secrets.VIREO_HOSTNAME }}
           username: jhu-devops
           key: ${{ secrets.JHU_DEVOPS_KEY }}
-          envs: PGPASSWORD, SPRING_DATASOURCE_URL, SPRING_DATASOURCE_PASSWORD
+          envs: PGPASSWORD, AUTH_SECURITY_JWT_SECRET, APP_SECURITY_SECRET
           script: |
             cd /opt/vireo/Vireo
-            docker compose down
+            # docker compose down
             cp ../.env .env
             cp ../application.yml ./src/main/resources/application.yml
-            sudo chown -R vireo:vireo /opt/vireo/Vireo
+            cp vireo.service /etc/systemd/system/
+            # Download WAR from GitHub Packages
+            mkdir -p target
+            curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                 -L https://maven.pkg.github.com/jhu-sheridan-libraries/vireo/org/tdl/vireo/4.2.10/vireo-4.2.10.war \
+                 -o target/vireo-4.2.10.war
+            # sudo chown -R vireo:vireo /opt/vireo/Vireo
             docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
-            #docker compose up --detach
+            # docker compose up --detach
             # wget https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem
             # sudo mv ./us-east-1-bundle.pem /etc/pki/ca-trust/source/
             # sudo update-ca-trust

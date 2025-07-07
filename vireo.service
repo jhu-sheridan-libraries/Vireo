@@ -1,0 +1,18 @@
+[Unit]
+Description=Vireo ETD Management System
+After=network.target
+
+[Service]
+Type=exec
+User=vireo
+Group=vireo
+WorkingDirectory=/opt/vireo/Vireo
+ExecStart=/usr/bin/java -jar /opt/vireo/Vireo/target/vireo-4.2.10.war
+ExecStop=/bin/kill -TERM $MAINPID
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

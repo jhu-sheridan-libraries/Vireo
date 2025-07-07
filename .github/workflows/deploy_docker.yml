@@ -54,9 +54,9 @@ jobs:
             cp ../.env .env
             cp ../application.yml ./src/main/resources/application.yml
             cp vireo.service /etc/systemd/system/
-            # Download WAR from latest build artifacts
+            # Download WAR and dependencies from latest build artifacts
             mkdir -p target
-            gh run download --repo jhu-sheridan-libraries/vireo -n vireo-war -D target/
+            gh run download --repo jhu-sheridan-libraries/vireo -n vireo-deployment -D target/
             mv target/vireo-*.war target/vireo-4.2.10.war
             # sudo chown -R vireo:vireo /opt/vireo/Vireo
             docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10

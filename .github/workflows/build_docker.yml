@@ -53,11 +53,13 @@ jobs:
       - name: "Build WAR"
         run: mvn clean package -DskipTests -Dproduction
 
-      - name: "Upload WAR as Release Asset"
+      - name: "Upload WAR and Dependencies"
         uses: actions/upload-artifact@v4
         with:
-          name: vireo-war
-          path: target/vireo-${{ steps.project_version.outputs.version }}.war
+          name: vireo-deployment
+          path: |
+            target/vireo-${{ steps.project_version.outputs.version }}.war
+            target/libs/
 
       - name: "Docker Build"
         run: docker image build -t ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:${{ steps.project_version.outputs.version }} -t ${{ inputs.images }}:${{ steps.project_version.outputs.version }} .

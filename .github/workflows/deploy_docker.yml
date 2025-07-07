@@ -54,11 +54,10 @@ jobs:
             cp ../.env .env
             cp ../application.yml ./src/main/resources/application.yml
             cp vireo.service /etc/systemd/system/
-            # Download WAR from GitHub Packages
+            # Download WAR from latest build artifacts
             mkdir -p target
-            curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                 -L https://maven.pkg.github.com/jhu-sheridan-libraries/vireo/org/tdl/vireo/4.2.10/vireo-4.2.10.war \
-                 -o target/vireo-4.2.10.war
+            gh run download --repo jhu-sheridan-libraries/vireo -n vireo-war -D target/
+            mv target/vireo-*.war target/vireo-4.2.10.war
             # sudo chown -R vireo:vireo /opt/vireo/Vireo
             docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
             # docker compose up --detach

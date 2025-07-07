@@ -53,13 +53,11 @@ jobs:
       - name: "Build WAR"
         run: mvn clean package -DskipTests -Dproduction
 
-      - name: "Upload WAR to GitHub Packages"
-        run: |
-          mvn deploy -DskipTests -Dproduction \
-            -Dregistry=https://maven.pkg.github.com/jhu-sheridan-libraries/vireo \
-            -Dtoken=${{ secrets.GITHUB_TOKEN }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: "Upload WAR as Release Asset"
+        uses: actions/upload-artifact@v4
+        with:
+          name: vireo-war
+          path: target/vireo-${{ steps.project_version.outputs.version }}.war
 
       - name: "Docker Build"
         run: docker image build -t ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:${{ steps.project_version.outputs.version }} -t ${{ inputs.images }}:${{ steps.project_version.outputs.version }} .

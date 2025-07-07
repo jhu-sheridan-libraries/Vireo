@@ -50,6 +50,17 @@ jobs:
         id: project_version
         run: echo "VERSION=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`" >> $GITHUB_OUTPUT
 
+      - name: "Build WAR"
+        run: mvn clean package -DskipTests -Dproduction
+
+      - name: "Upload WAR to GitHub Packages"
+        run: |
+          mvn deploy -DskipTests -Dproduction \
+            -Dregistry=https://maven.pkg.github.com/jhu-sheridan-libraries/vireo \
+            -Dtoken=${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: "Docker Build"
         run: docker image build -t ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:${{ steps.project_version.outputs.version }} -t ${{ inputs.images }}:${{ steps.project_version.outputs.version }} .
   

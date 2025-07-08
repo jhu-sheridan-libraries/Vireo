@@ -16,31 +16,36 @@ These workflows utilize the following repository or organization secrets:
 
 ### 1. `build_docker.yml`
 
-*   **Purpose**: Builds the `vireo` and `vireo-dev` Docker images.
-*   **Trigger**: Likely manual (`workflow_dispatch`) or potentially on pushes to specific branches.
-*   **Inputs**: May require inputs to specify which image tag to build or push.
-*   **Runner**: Github Cloud
-*   **Description**: This workflow handles the Docker image creation process, tagging, and potentially pushing them to a container registry (like GHCR).
+*   **Purpose**: Builds WAR artifacts and Docker images for deployment.
+*   **Trigger**: Manual (`workflow_dispatch`).
+*   **Inputs**:
+    *   `images` (choice: `vireo`, `vireo-dev`, default: `vireo-dev`): The Docker image to build.
+    *   `environment` (environment: `stage`, `prod`, default: `stage`): Target environment.
+*   **Runner**: `ubuntu-latest`
+*   **Description**: 
+    1.  Sets up Java 11 and caches Maven/Node dependencies.
+    2.  Builds WAR file with production settings (`mvn clean package -DskipTests -Dproduction`).
+    3.  Uploads WAR and libs/ as GitHub Actions artifacts with version-specific naming.
+    4.  Builds and pushes Docker images to GHCR if build succeeds.
 
 ### 2. `deploy_docker.yml`
 
-*   **Purpose**: Deploys a specified Docker image to a target environment (stage or prod).
+*   **Purpose**: Deploys WAR artifacts as systemd service to target environment.
 *   **Trigger**: Manual (`workflow_dispatch`).
 *   **Inputs**:
-    *   `images` (choice: `vireo`, `vireo-dev`, default: `vireo-dev`): The Docker image to deploy.
-    *   `environment` (environment: `stage`, `prod`, default: `stage`): The target deployment environment, controlling secrets and potentially target host.
-*   **Secrets**: `VIREO_HOSTNAME`, `JHU_DEVOPS_KEY`.
+    *   `images` (choice: `vireo`, `vireo-dev`, default: `vireo-dev`): Docker image reference (legacy).
+    *   `environment` (environment: `stage`, `prod`, default: `stage`): Target deployment environment.
+*   **Secrets**: `VIREO_HOSTNAME`, `JHU_DEVOPS_KEY`, `GITHUB_TOKEN`, `DB_PASSWORD`, `VIREO_JWT`, `AUTH_CRYPTOSERVICE`.
 *   **Runner**: `self-hosted`.
 *   **Description**:
-    1.  Checks out the repository code.
-    2.  Uses `rsync` to synchronize the repository contents (like `docker-compose.yml`, `.env` examples) to the target host (`/opt/vireo/Vireo`).
-    3.  Uses SSH to execute commands remotely on the target host:
-        *   Navigates to the application directory.
-        *   Stops existing services (`docker compose down`).
-        *   Copies the example environment file (`cp ./example.env .env`).
-        *   Pulls the specified Docker image from GHCR.
-        *   Starts the services (`docker compose up --detach`).
-        *   Loads a database dump into the running database container.
+    1.  Gets project version and sets up GitHub CLI.
+    2.  Syncs repository code to target host (`/opt/vireo/Vireo`).
+    3.  Executes remote SSH commands:
+        *   Stops existing systemd service (`systemctl stop vireo`).
+        *   Updates configuration files (.env, application.yml).
+        *   Downloads versioned WAR and dependencies from GitHub Actions artifacts.
+        *   Installs systemd service file and reloads daemon.
+        *   Starts service and verifies status (`systemctl start vireo`).
 
 ### 3. `docker_restart.yml`
 
@@ -78,7 +83,18 @@ These workflows utilize the following repository or organization secrets:
 *   **Runner**: `self-hosted` or `ubuntu-latest` depending on how RDS is accessed.
 *   **Description**: Connects to the target RDS instance and uses `psql` or another tool to import data from a specified dump file.
 
-### 7. `test.yml`
+### 7. `mvn_start.yml` (renamed to Manage Vireo Service)
+
+*   **Purpose**: Manages the Vireo systemd service without full deployment.
+*   **Trigger**: Manual (`workflow_dispatch`).
+*   **Inputs**:
+    *   `action` (choice: `start`, `stop`, `restart`, `status`, default: `restart`): Service management action.
+    *   `environment` (environment: `stage`, `prod`, default: `stage`): Target environment.
+*   **Secrets**: `VIREO_HOSTNAME`, `JHU_DEVOPS_KEY`.
+*   **Runner**: `self-hosted`.
+*   **Description**: Executes systemd service commands (`systemctl start/stop/restart/status vireo`) and displays service status.
+
+### 8. `test.yml`
 
 *   **Purpose**: Runs automated tests for the Vireo application.
 *   **Trigger**: Likely on `push` to branches (e.g., `main`, `develop`) and `pull_request`.

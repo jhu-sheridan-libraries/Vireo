@@ -32,6 +32,10 @@ jobs:
           username: jhu-devops
           key: ${{ secrets.JHU_DEVOPS_KEY }}
           script: |
-            sudo systemctl ${{ inputs.action }} vireo
-            sudo systemctl status vireo --no-pager
+            if [ "${{ inputs.action }}" = "status" ]; then
+              sudo systemctl status vireo --no-pager || true
+            else
+              sudo systemctl ${{ inputs.action }} vireo
+              sudo systemctl status vireo --no-pager || true
+            fi
             

@@ -79,6 +79,9 @@ jobs:
             gh run download --repo jhu-sheridan-libraries/vireo -n "vireo-deployment-$PROJECT_VERSION" -D target/
             mv target/vireo-*.war target/vireo-$PROJECT_VERSION.war
             
+            # Verify libs directory exists (required for WAR execution)
+            ls -la target/libs/ || echo "Warning: libs directory not found"
+            
             # Set ownership and restart service
             sudo chown -R vireo:vireo /opt/vireo/Vireo
             sudo systemctl enable vireo

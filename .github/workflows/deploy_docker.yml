@@ -25,6 +25,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Get project version
+        id: project_version
+        run: echo "VERSION=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`" >> $GITHUB_OUTPUT
+
+      - name: Setup GitHub CLI
+        run: |
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update && sudo apt install gh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: executing rsync as jhu-devops using secret
         uses: burnett01/rsync-deployments@7.0.2
         with:
@@ -39,28 +51,36 @@ jobs:
         uses: appleboy/ssh-action@v1
         env:
           PGPASSWORD: ${{ secrets.DB_PASSWORD}}
-          # PGPASSWORD: vireo
           AUTH_SECURITY_JWT_SECRET: ${{ secrets.VIREO_JWT }}
           APP_SECURITY_SECRET: ${{ secrets.AUTH_CRYPTOSERVICE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PROJECT_VERSION: ${{ steps.project_version.outputs.VERSION }}
 
         with:
           host: ${{ secrets.VIREO_HOSTNAME }}
           username: jhu-devops
           key: ${{ secrets.JHU_DEVOPS_KEY }}
-          envs: PGPASSWORD, AUTH_SECURITY_JWT_SECRET, APP_SECURITY_SECRET
+          envs: PGPASSWORD, AUTH_SECURITY_JWT_SECRET, APP_SECURITY_SECRET, GITHUB_TOKEN, PROJECT_VERSION
           script: |
             cd /opt/vireo/Vireo
-            # docker compose down
+            
+            # Stop existing service
+            sudo systemctl stop vireo || true
+            
+            # Update configuration
             cp ../.env .env
             cp ../application.yml ./src/main/resources/application.yml
-            cp vireo.service /etc/systemd/system/
-            # Download WAR and dependencies from latest build artifacts
+            sudo cp vireo.service /etc/systemd/system/
+            sudo systemctl daemon-reload
+            
+            # Download WAR and dependencies
             mkdir -p target
-            gh run download --repo jhu-sheridan-libraries/vireo -n vireo-deployment -D target/
-            mv target/vireo-*.war target/vireo-4.2.10.war
-            # sudo chown -R vireo:vireo /opt/vireo/Vireo
-            docker pull ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:4.2.10
-            # docker compose up --detach
-            # wget https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem
-            # sudo mv ./us-east-1-bundle.pem /etc/pki/ca-trust/source/
-            # sudo update-ca-trust
+            gh auth login --with-token <<< "$GITHUB_TOKEN"
+            gh run download --repo jhu-sheridan-libraries/vireo -n "vireo-deployment-$PROJECT_VERSION" -D target/
+            mv target/vireo-*.war target/vireo-$PROJECT_VERSION.war
+            
+            # Set ownership and restart service
+            sudo chown -R vireo:vireo /opt/vireo/Vireo
+            sudo systemctl enable vireo
+            sudo systemctl start vireo
+            sudo systemctl status vireo --no-pager

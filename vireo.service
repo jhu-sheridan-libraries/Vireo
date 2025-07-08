@@ -7,8 +7,11 @@ Type=exec
 User=vireo
 Group=vireo
 WorkingDirectory=/opt/vireo/Vireo
-ExecStart=/usr/bin/java -jar /opt/vireo/Vireo/target/vireo-4.2.10.war --spring.config.location=file:/opt/vireo/application.yml
+ExecStart=/usr/bin/mvn clean spring-boot:run
+ExecStartPost=/bin/sh -c 'echo $MAINPID > /opt/vireo/vireo.pid'
 ExecStop=/bin/kill -TERM $MAINPID
+ExecStopPost=/bin/rm -f /opt/vireo/vireo.pid
+PIDFile=/opt/vireo/vireo.pid
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal

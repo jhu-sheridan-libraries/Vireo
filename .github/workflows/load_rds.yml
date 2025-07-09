@@ -20,7 +20,7 @@ jobs:
         env:
           PGPASSWORD: ${{ secrets.DB_PASSWORD}}
         with:
-          host: msel-vireo02.mse.jhu.edu
+          host: ${{ secrets.VIREO_HOSTNAME }}
           username: jhu-devops
           key: ${{ secrets.JHU_DEVOPS_KEY }}
           envs: PGPASSWORD

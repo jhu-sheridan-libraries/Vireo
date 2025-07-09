@@ -14,7 +14,7 @@ These workflows utilize the following repository or organization secrets:
 
 ## Workflows
 
-### 1. `build_docker.yml`
+### 1. `build_vireo.yml`
 
 *   **Purpose**: Builds WAR artifacts and Docker images for deployment.
 *   **Trigger**: Manual (`workflow_dispatch`).
@@ -28,9 +28,9 @@ These workflows utilize the following repository or organization secrets:
     3.  Uploads WAR and libs/ as GitHub Actions artifacts with version-specific naming.
     4.  Builds and pushes Docker images to GHCR if build succeeds.
 
-### 2. `deploy_docker.yml`
+### 2. `deploy_vireo.yml`
 
-*   **Purpose**: Deploys WAR artifacts as systemd service to target environment.
+*   **Purpose**: Deploys Maven-based systemd service to target environment.
 *   **Trigger**: Manual (`workflow_dispatch`).
 *   **Inputs**:
     *   `images` (choice: `vireo`, `vireo-dev`, default: `vireo-dev`): Docker image reference (legacy).
@@ -44,7 +44,8 @@ These workflows utilize the following repository or organization secrets:
         *   Stops existing systemd service (`systemctl stop vireo`).
         *   Updates configuration files (.env, application.yml).
         *   Downloads versioned WAR and dependencies from GitHub Actions artifacts.
-        *   Installs systemd service file and reloads daemon.
+        *   Installs systemd service file (uses `mvn clean spring-boot:run`) and reloads daemon.
+        *   Creates PID file for process monitoring coordination.
         *   Starts service and verifies status (`systemctl start vireo`).
 
 ### 3. `docker_restart.yml`
@@ -65,25 +66,20 @@ These workflows utilize the following repository or organization secrets:
 *   **Runner**: `self-hosted`.
 *   **Description**: Executes remote SSH commands (e.g., `docker compose down`) on the target host.
 
-### 5. `dump_postgres.yml`
+### 5. `load_rds.yml`
 
-*   **Purpose**: Creates a database dump from the PostgreSQL instance associated with an environment.
-*   **Trigger**: Likely manual (`workflow_dispatch`) or potentially scheduled.
-*   **Inputs**: May require an `environment` input (`stage`/`prod`).
-*   **Secrets**: `VIREO_HOSTNAME`, `JHU_DEVOPS_KEY`, potentially `DB_PASSWORD` or relies on container access.
+*   **Purpose**: Cleans and loads database dump into RDS instance.
+*   **Trigger**: Manual (`workflow_dispatch`).
+*   **Inputs**:
+    *   `environment` (environment: `stage`, `prod`, default: `prod`): Target environment.
+*   **Secrets**: `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `JHU_DEVOPS_KEY`.
 *   **Runner**: `self-hosted`.
-*   **Description**: Executes remote SSH commands to run `pg_dump` against the appropriate database (likely within the running container or directly if accessible) and stores the dump file (e.g., `/opt/vireo/vireo4.dump`).
+*   **Description**:
+    1.  Connects to RDS via SSH tunnel through msel-vireo02.
+    2.  Drops and recreates public schema to clean database.
+    3.  Imports data from `/opt/vireo/vireo4.dump` using psql.
 
-### 6. `load_rds.yml`
-
-*   **Purpose**: Loads data (likely a database dump) into an RDS instance. This might be separate from the main application deployment database load step in `deploy_docker.yml`.
-*   **Trigger**: Likely manual (`workflow_dispatch`).
-*   **Inputs**: May require `environment` or specific RDS connection details/dump file location.
-*   **Secrets**: Database credentials (`DB_PASSWORD`?), potentially AWS credentials if interacting via AWS CLI/SDK.
-*   **Runner**: `self-hosted` or `ubuntu-latest` depending on how RDS is accessed.
-*   **Description**: Connects to the target RDS instance and uses `psql` or another tool to import data from a specified dump file.
-
-### 7. `mvn_start.yml` (renamed to Manage Vireo Service)
+### 6. `manage_vireo.yml`
 
 *   **Purpose**: Manages the Vireo systemd service without full deployment.
 *   **Trigger**: Manual (`workflow_dispatch`).
@@ -92,9 +88,9 @@ These workflows utilize the following repository or organization secrets:
     *   `environment` (environment: `stage`, `prod`, default: `stage`): Target environment.
 *   **Secrets**: `VIREO_HOSTNAME`, `JHU_DEVOPS_KEY`.
 *   **Runner**: `self-hosted`.
-*   **Description**: Executes systemd service commands (`systemctl start/stop/restart/status vireo`) and displays service status.
+*   **Description**: Executes systemd service commands with proper error handling for status checks of dead services.
 
-### 8. `test.yml`
+### 7. `test.yml`
 
 *   **Purpose**: Runs automated tests for the Vireo application.
 *   **Trigger**: Likely on `push` to branches (e.g., `main`, `develop`) and `pull_request`.

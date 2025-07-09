@@ -12,7 +12,7 @@ on:
           - vireo-dev
         default: 'vireo-dev'
       environment:
-        description: 'stage(03) or prod(05)'
+        description: 'stage(02) or prod(03)'
         required: true
         type: environment
         default: 'stage'
@@ -62,7 +62,7 @@ jobs:
       - name: "Upload WAR and Dependencies"
         uses: actions/upload-artifact@v4
         with:
-          name: vireo-deployment-${{ steps.project_version.outputs.version }}
+          name: ${{ inputs.images }}-deployment-${{ steps.project_version.outputs.version }}
           path: |
             target/vireo-${{ steps.project_version.outputs.version }}.war
             target/libs/

@@ -1,4 +1,4 @@
-name: Build
+name: Build for Deployment
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ on:
           - vireo-dev
         default: 'vireo-dev'
       environment:
-        description: 'stage(03) or prod(05)'
+        description: 'stage(02) or prod(03)'
         required: true
         type: environment
         default: 'stage'
@@ -25,6 +25,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
 
       - name: Cache Maven repository
         uses: actions/cache@v3
@@ -43,17 +49,31 @@ jobs:
       - name: "Node Modules Cache"
         uses: actions/cache@v3
         with:
-          path: $GITHUB_WORKSPACE/repo/node_modules
+          path: node_modules
           key: ${{ runner.os }}-cache-node_modules-${{ hashFiles('**/package.json') }}
 
       - name: "Get project version from POM"
         id: project_version
         run: echo "VERSION=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`" >> $GITHUB_OUTPUT
 
+      - name: "Build WAR"
+        run: mvn clean package -DskipTests -Dproduction
+
+      - name: "Upload WAR and Dependencies"
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.images }}-deployment-${{ steps.project_version.outputs.version }}
+          path: |
+            target/vireo-${{ steps.project_version.outputs.version }}.war
+            target/libs/
+          retention-days: 30
+
       - name: "Docker Build"
+        if: success()
         run: docker image build -t ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:${{ steps.project_version.outputs.version }} -t ${{ inputs.images }}:${{ steps.project_version.outputs.version }} .
   
       - name: "Login to GHCR"
+        if: success()
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
@@ -61,5 +81,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
   
       - name: "Push Docker images to GHCR"
-        run:  docker push ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:${{ steps.project_version.outputs.version }}
+        if: success()
+        run: docker push ghcr.io/jhu-sheridan-libraries/${{ inputs.images }}:${{ steps.project_version.outputs.version }}
   

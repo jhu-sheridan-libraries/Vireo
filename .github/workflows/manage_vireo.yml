@@ -1,0 +1,41 @@
+name: Manage Vireo Service
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Service action'
+        required: true
+        type: choice
+        options:
+          - start
+          - stop
+          - restart
+          - status
+        default: 'restart'
+      environment:
+        description: 'stage(02) or prod(03)'
+        required: true
+        type: environment
+        default: 'stage'
+
+jobs:
+  manage-service:
+    runs-on: [self-hosted]
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Execute service command
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ vars.VIREO_HOSTNAME }}
+          username: jhu-devops
+          key: ${{ secrets.JHU_DEVOPS_KEY }}
+          script: |
+            if [ "${{ inputs.action }}" = "status" ]; then
+              sudo systemctl status vireo --no-pager || true
+            else
+              sudo systemctl ${{ inputs.action }} vireo
+              sudo systemctl status vireo --no-pager || true
+            fi
+            

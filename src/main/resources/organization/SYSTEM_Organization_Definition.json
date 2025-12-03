@@ -1,5 +1,5 @@
 {
-  "name": "Johns Hopkins University",
+  "name": "Institution",
   "acceptsSubmissions": false,
   "category": {
     "name": "System"
@@ -7,10 +7,10 @@
   "originalWorkflowSteps": [
     {
       "name": "Personal Information",
-      "instructions": "<h2>Instructions:</h2><p>Please verify all of your personal information. Some of the information has been provided by your school; if this information is in error, you will need to correct it through the appropriate office at your school.</p><p>Required fields are indicated with an asterisk.</p>",
+      "instructions": "<h4>Instructions:</h4><p>Please verify all of your personal information. Some of the information has been provided by your school; if this information is in error, you will need to correct it through the appropriate office at your school.</p><p>Required fields are indicated with an asterisk.</p>",
       "overrideable": true,
       "originatingOrganization": {
-        "name": "Johns Hopkins University",
+        "name": "Institution",
         "category": {
           "name": "System"
         }
@@ -18,14 +18,14 @@
       "originalNotes": [
         {
           "name": "name",
-          "text": "Your name should match the name associated with your JHED ID.",
+          "text": "Your name should appear as it does on your title page. You can use Unicode characters, if your computer supports them.",
           "originatingWorkflowStep": {
             "name": "Verify Personal Information"
           }
         },
         {
           "name": "degreeAndMajor",
-          "text": "Select your degree and major/concentration from the list. If your major is not listed, choose \"Not Listed\" and contact us at etd-support@jhu.edu",
+          "text": "Select the degree and major that are listed on your title page.",
           "originatingWorkflowStep": {
             "name": "Verify Personal Information"
           }
@@ -55,7 +55,7 @@
           "enabled": true,
           "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
           "help": "Enter your first name.",
           "gloss": "First Name"
@@ -95,7 +95,7 @@
           "enabled": true,
           "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
           "help": "Enter your last name.",
           "gloss": "Last Name"
@@ -122,7 +122,7 @@
           "enabled": true,
           "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
           "help": "Enter your email.",
           "gloss": "Email"
@@ -171,7 +171,7 @@
           "hidden": true,
           "usage": "",
           "help": "",
-          "gloss": "Student ID Number"
+          "gloss": "Institutional ID"
         },
         {
           "fieldPredicate": {
@@ -186,7 +186,7 @@
           },
           "repeatable": false,
           "overrideable": true,
-          "enabled": false,
+          "enabled": true,
           "optional": true,
           "usage": "",
           "help": "Enter the year in which you were born. (e.g. 2000)",
@@ -205,7 +205,7 @@
           },
           "repeatable": false,
           "overrideable": true,
-          "enabled": false,
+          "enabled": true,
           "optional": true,
           "usage": "",
           "help": "Enter the name of your degree granting institution.",
@@ -227,7 +227,7 @@
           "enabled": true,
           "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
           "help": "Enter the name of your college.",
           "gloss": "College",
@@ -249,7 +249,7 @@
           },
           "repeatable": false,
           "overrideable": true,
-          "enabled": false,
+          "enabled": true,
           "optional": true,
           "usage": "",
           "help": "Enter the name of your program.",
@@ -275,7 +275,7 @@
           "enabled": true,
           "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
           "help": "Enter the name of your department.",
           "gloss": "Department",
@@ -300,7 +300,7 @@
           "enabled": true,
           "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
           "help": "Select your degree type.",
           "gloss": "Degree",
@@ -326,7 +326,7 @@
           "enabled": true,
           "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
           "help": "Enter the name of your major discipline.",
           "gloss": "Major",
@@ -351,7 +351,7 @@
           "enabled": true,
           "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
           "help": "Enter a phone number where you can be reached after graduating.",
           "gloss": "Permanent Phone"
@@ -372,7 +372,7 @@
           "enabled": true,
           "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
           "help": "Enter an address where you can be reached after graduating.",
           "gloss": "Permanent Address"
@@ -393,7 +393,7 @@
           "enabled": true,
           "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
           "help": "Enter an email address where you can be reached after graduating.",
           "gloss": "Permanent Email"
@@ -443,7 +443,7 @@
       "instructions": "",
       "overrideable": true,
       "originatingOrganization": {
-        "name": "Johns Hopkins University",
+        "name": "Institution",
         "category": {
           "name": "System"
         }
@@ -483,7 +483,7 @@
           },
           "repeatable": false,
           "overrideable": true,
-          "enabled": false,
+          "enabled": true,
           "optional": false,
           "flagged": false,
           "logged": true,
@@ -495,10 +495,10 @@
     },
     {
       "name": "Document Information",
-      "instructions": "<h2>Instructions:</h2><p>Describe your thesis or dissertation. Please make sure that the information entered below matches the information contained in your document.</p>",
+      "instructions": "<h4>Instructions:</h4><p>Describe your thesis or dissertation. Please make sure that the information entered below matches the information contained in your document.</p>",
       "overrideable": true,
       "originatingOrganization": {
-        "name": "Johns Hopkins University",
+        "name": "Institution",
         "category": {
           "name": "System"
         }
@@ -506,42 +506,28 @@
       "originalNotes": [
         {
           "name": "degreeDate",
-          "text": "For the degree date, enter the month and year in which your degree will be conferred (typically your graduation semester).",
-          "originatingWorkflowStep": {
-            "name": "Verify Personal Information"
-          }
-        },
-        {
-          "name": "documentType",
-          "text": "For all doctoral degrees except the Doctor of International Affairs (DIA), select Dissertation under Document Type. For the DIA, select Doctoral Thesis.",
+          "text": "For the graduation semester, enter the semester in which your degree will be conferred.",
           "originatingWorkflowStep": {
             "name": "Verify Personal Information"
           }
         },
         {
           "name": "multipleKeywords",
-          "text": "You may enter multiple keywords by selecting the + sign.",
-          "originatingWorkflowStep": {
-            "name": "Verify Personal Information"
-          }
-        },
-        {
-          "name": "subjectFields",
-          "text": "For subject fields, please choose the option which best describes your thesis or dissertation. You may enter multiple keywords by selecting the + sign.",
+          "text": "Enter one keyword or key phrase per entry field.",
           "originatingWorkflowStep": {
             "name": "Verify Personal Information"
           }
         },
         {
           "name": "committeeMembers",
-          "text": "Please supply the names of your committee members.",
+          "text": "Please supply the names of your committee members, and a single email address to reach the chair or either co-chair.",
           "originatingWorkflowStep": {
             "name": "Verify Personal Information"
           }
         },
         {
           "name": "embargoCheckAdvisor",
-          "text": "If you don't know if you need an embargo, then you should check with your advisor. This option is typically only used for situations like patent holds or a request by a publisher if content from the document is pending publication. Select the option that meets your expected needs.",
+          "text": "If you don't know if you need an embargo, then you should check with your advisor. This option is typically only used for situations like patent holds or a request by a publisher if content from the document is pending publication.",
           "originatingWorkflowStep": {
             "name": "Verify Personal Information"
           }
@@ -564,7 +550,7 @@
           "enabled": true,
           "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
           "help": "Enter the title of your document.",
           "gloss": "Title"
@@ -585,7 +571,7 @@
           "enabled": true,
           "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
           "help": "Select your graduation month. Format: May 2022",
           "gloss": "Graduation Semester",
@@ -629,7 +615,7 @@
           "enabled": true,
           "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
           "help": "Select your submission type.",
           "gloss": "Submission Type",
@@ -654,7 +640,7 @@
           "enabled": true,
           "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
           "help": "Enter the abstract for your document.",
           "gloss": "Abstract"
@@ -675,7 +661,7 @@
           "enabled": true,
           "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
           "help": "Enter keywords for your document. You may enter multiple keywords by selecting the + sign.",
           "gloss": "Keywords"
@@ -693,8 +679,8 @@
           },
           "repeatable": true,
           "overrideable": true,
-          "enabled": false,
-          "optional": true,
+          "enabled": true,
+          "optional": false,
           "flagged": false,
           "logged": false,
           "usage": "",
@@ -719,7 +705,7 @@
           "repeatable": false,
           "overrideable": true,
           "enabled": true,
-          "optional": false,
+          "optional": true,
           "usage": "",
           "help": "Select the primary language of your document.",
           "gloss": "Language",
@@ -737,17 +723,21 @@
             "name": "Document Information"
           },
           "inputType": {
-            "name": "INPUT_TEXT"
+            "name": "INPUT_CONTACT_SELECT"
           },
-          "repeatable": true,
+          "repeatable": false,
           "overrideable": true,
           "enabled": true,
           "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
-          "help": "Enter the name(s) for your committee chair or co-chairs. You may enter multiple committee members by selecting the + sign.",
-          "gloss": "Committee Chair(s)"
+          "help": "Select the name and email address for your committee chair.",
+          "gloss": "Committee Chair",
+          "controlledVocabulary": {
+            "name": "Committee Members",
+            "isEntityProperty": false
+          }
         },
         {
           "fieldPredicate": {
@@ -758,17 +748,21 @@
             "name": "Document Information"
           },
           "inputType": {
-            "name": "INPUT_TEXT"
+            "name": "INPUT_CONTACT"
           },
           "repeatable": true,
           "overrideable": true,
           "enabled": true,
-          "optional": true,
+          "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
-          "help": "Enter the names your non-chairing committee members. You may enter multiple committee members by selecting the + sign.",
-          "gloss": "Non-Chairing Committee Members"
+          "help": "Enter the names and email addresses of your non-chairing committee members. You may enter multiple committee members by selecting the + sign.",
+          "gloss": "Non-Chairing Committee Members",
+          "controlledVocabulary": {
+            "name": "Committee Members",
+            "isEntityProperty": false
+          }
         },
         {
           "fieldPredicate": {
@@ -803,11 +797,11 @@
           "repeatable": false,
           "overrideable": true,
           "enabled": true,
-          "optional": false,
+          "optional": true,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
-          "help": "Select the default embargo for the publication of your work. If you are unsure, you should discuss the options with your advisor.",
+          "help": "Select the default emborgo for the publication of your work. If you are unsure, you should discuss the options with your advisor.",
           "gloss": "Default Embargos",
           "controlledVocabulary": {
             "name": "Default Embargos",
@@ -827,10 +821,10 @@
           },
           "repeatable": false,
           "overrideable": true,
-          "enabled": false,
+          "enabled": true,
           "optional": true,
           "usage": "",
-          "help": "Select the ProQuest embargo for the publication of your work. If you are unsure, you should discuss the options with your advisor.",
+          "help": "Select the ProQuest emborgo for the publication of your work. If you are unsure, you should discuss the options with your advisor.",
           "gloss": "ProQuest Embargos",
           "controlledVocabulary": {
             "name": "Proquest Embargos",
@@ -841,10 +835,10 @@
     },
     {
       "name": "File Upload",
-      "instructions": "<h2>Instructions:</h2><p>In this step you will upload your thesis or dissertation to the server. Optionally, you may upload additional supplementary files that will be available along with your document after publication.</p>",
+      "instructions": "<h4>Instructions:</h4><p>In this step you will upload your thesis or dissertation to the server. Optionally, you may upload additional supplementary files that will be available along with your document after publication.</p>",
       "overrideable": true,
       "originatingOrganization": {
-        "name": "Johns Hopkins University",
+        "name": "Institution",
         "category": {
           "name": "System"
         }
@@ -852,7 +846,7 @@
       "originalNotes": [
         {
           "name": "onePdfFile",
-          "text": "Your thesis or dissertation can only be one file, and the only allowable file format is PDF/A. Please see https://www.library.jhu.edu/library-services/electronic-theses-dissertations/ for information related to creating a PDF/A file.",
+          "text": "Your thesis or dissertation can only be one file, and the only allowable file format is PDF. Please contact your school for help or information related to creating a PDF file.",
           "originatingWorkflowStep": {
             "name": "Verify Personal Information"
           }
@@ -860,13 +854,6 @@
         {
           "name": "noLimit",
           "text": "There is no limit on the number or formats of supplementary files you may upload.",
-          "originatingWorkflowStep": {
-            "name": "Verify Personal Information"
-          }
-        },
-        {
-          "name": "sizeLimit",
-          "text": "SIZE LIMIT: no individual file may exceed 512 MB, and the total of all files must not exceed 4 GB.",
           "originatingWorkflowStep": {
             "name": "Verify Personal Information"
           }
@@ -889,7 +876,7 @@
           "enabled": true,
           "optional": false,
           "flagged": false,
-          "logged": true,
+          "logged": false,
           "usage": "",
           "help": "Upload the primary manuscript. You may only upload one file. Additional files may be uploaded below.",
           "gloss": "Manuscript in PDF",
@@ -930,7 +917,7 @@
           },
           "repeatable": true,
           "overrideable": true,
-          "enabled": false,
+          "enabled": true,
           "optional": true,
           "usage": "",
           "help": "Upload the source files used to create your manuscript such as a Word Document, LaTeX Source file, etc. These files will be used to improve the digital preservation potential of your document.",
@@ -949,7 +936,7 @@
           },
           "repeatable": true,
           "overrideable": true,
-          "enabled": false,
+          "enabled": true,
           "optional": true,
           "usage": "",
           "help": "Upload additional administrative files such as a signed graduation release form or other local administrative files.",
@@ -968,7 +955,7 @@
           },
           "repeatable": false,
           "overrideable": true,
-          "enabled": false,
+          "enabled": true,
           "optional": true,
           "hidden": true,
           "usage": "",
@@ -988,7 +975,7 @@
           },
           "repeatable": true,
           "overrideable": true,
-          "enabled": false,
+          "enabled": true,
           "optional": true,
           "hidden": true,
           "usage": "",
@@ -1008,7 +995,7 @@
           },
           "repeatable": true,
           "overrideable": true,
-          "enabled": false,
+          "enabled": true,
           "optional": true,
           "hidden": true,
           "usage": "",
@@ -1028,7 +1015,7 @@
           },
           "repeatable": true,
           "overrideable": true,
-          "enabled": false,
+          "enabled": true,
           "optional": true,
           "hidden": true,
           "usage": "",
@@ -1039,85 +1026,8 @@
     }
   ],
   "parentOrganization": null,
-  "childrenOrganizations": [
-    {
-      "name": "Advanced Academic Programs",
-      "category": {
-        "name": "College"
-      },
-      "acceptsSubmissions": true,
-      "emails": [
-        "aapacademicaffairs@jh.edu"
-      ]
-    },
-    {
-      "name": "Bloomberg School of Public Health",
-      "category": {
-        "name": "College"
-      },
-      "acceptsSubmissions": true,
-      "emails": ["BSPHExams@jhu.edu"]
-    },
-    {
-      "name": "Krieger School of Arts and Sciences",
-      "category": {
-        "name": "College"
-      },
-      "acceptsSubmissions": true,
-      "emails": null
-    },
-    {
-      "name": "Peabody Institute",
-      "category": {
-        "name": "College"
-      },
-      "acceptsSubmissions": true,
-      "emails": ["kdelaurenti@jhu.edu"]
-    },
-    {
-      "name": "School of Advanced International Studies",
-      "category": {
-        "name": "College"
-      },
-      "acceptsSubmissions": true,
-      "emails": ["jyoungs1@jhu.edu"]
-    },
-    {
-      "name": "School of Education",
-      "category": {
-        "name": "College"
-      },
-      "acceptsSubmissions": true,
-      "emails": ["soe.edd@jhu.edu, ravenm@jhu.edu"]
-    },
-    {
-      "name": "School of Medicine",
-      "category": {
-        "name": "College"
-      },
-      "acceptsSubmissions": true,
-      "emails": [
-        "GradStdDsk@jhmi.edu"
-      ]
-    },
-    {
-      "name": "School of Nursing",
-      "category": {
-        "name": "College"
-      },
-      "acceptsSubmissions": true,
-      "emails": ["SON-PhdProgram@jhu.edu"]
-    },
-    {
-      "name": "Whiting School of Engineering",
-      "category": {
-        "name": "College"
-      },
-      "acceptsSubmissions": true,
-      "emails": null
-    }
-  ],
-  "emails": ["etd-support@jhu.edu"],
+  "childrenOrganizations": null,
+  "emails": null,
   "emailWorkflowRules": [
     {
       "isSystem": true,
@@ -1267,5 +1177,3 @@
     }
   ]
 }
-
-

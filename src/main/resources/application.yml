@@ -36,8 +36,8 @@ spring:
 
   sql:
     init:
-      platform: h2
-      #platform: postgresql
+      #platform: h2
+      platform: postgresql
       #platform: mysql
 
   datasource:

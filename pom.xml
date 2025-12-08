@@ -50,7 +50,7 @@
       <artifactId>tomcat-embed-core</artifactId>
       <version>9.0.110</version>
     </dependency>
-    
+
     <dependency>
       <groupId>org.apache.tomcat.embed</groupId>
       <artifactId>tomcat-embed-el</artifactId>
@@ -209,7 +209,7 @@
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>1.28.5</version>
+      <version>3.2.2</version>
       <exclusions>
         <exclusion>
           <groupId>xom</groupId>

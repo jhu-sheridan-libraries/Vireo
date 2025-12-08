@@ -36,8 +36,8 @@ spring:
 
   sql:
     init:
-      #platform: h2
-      platform: postgresql
+      platform: h2
+      #platform: postgresql
       #platform: mysql
 
   datasource:
@@ -60,7 +60,7 @@ spring:
 
   jpa:
     # H2
-    database-platform: org.hibernate.dialect.H2Dialect
+    #database-platform: org.hibernate.dialect.H2Dialect
     # PostgreSQL
     #database-platform: org.hibernate.dialect.PostgreSQLDialect
     # MySQL

@@ -7,7 +7,7 @@ Type=exec
 User=vireo
 Group=vireo
 WorkingDirectory=/opt/vireo/Vireo
-ExecStart=/usr/bin/mvn clean spring-boot:run -Dspring-boot.run.jvmArguments="-Xms2048m -Xmx2048m"
+ExecStart=/usr/bin/mvn clean spring-boot:run -Dspring-boot.run.jvmArguments="-Xms2048m -Xmx4096m"
 ExecStartPost=/bin/sh -c 'echo $MAINPID > /opt/vireo/vireo.pid'
 ExecStop=/bin/kill -TERM $MAINPID
 ExecStopPost=/bin/rm -f /opt/vireo/vireo.pid

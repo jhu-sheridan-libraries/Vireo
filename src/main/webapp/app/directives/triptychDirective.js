@@ -362,7 +362,13 @@ vireo.directive("triptych", function () {
             $scope.ready = $q.all([OrganizationRepo.ready()]);
 
             $scope.ready.then(function () {
-                $scope.selectOrganization($scope.organizations[0]);
+                var rootOrg = $scope.organizations[0];
+                $scope.setSelectedOrganization(rootOrg);
+
+                // Auto-open the root organization's children panel
+                var rootPanel = getPanel(rootOrg);
+                rootPanel.active = true;
+                open(rootPanel);
             });
 
         },

@@ -364,7 +364,7 @@ vireo.directive("triptych", function () {
                 if ($scope.organizations && $scope.organizations.length > 0) {
                     $scope.selectOrganization($scope.organizations[0]);
                 }
-            }, 250);
+            }, 500);
 
         },
         link: function ($scope, element, attr) {

@@ -360,13 +360,11 @@ vireo.directive("triptych", function () {
             };
 
             // Auto-open the first organization panel on page load
-            $scope.ready = $q.all([OrganizationRepo.ready()]);
-
-            $scope.ready.then(function () {
+            $timeout(function() {
                 if ($scope.organizations && $scope.organizations.length > 0) {
                     $scope.selectOrganization($scope.organizations[0]);
                 }
-            });
+            }, 1000);
 
         },
         link: function ($scope, element, attr) {

@@ -6,7 +6,7 @@ This design specifies the technical implementation for creating a production-rea
 
 ### Goals
 
-- Create a JHU-specific Dockerfile (`Dockerfile.jhu-aws`) optimized for AWS container services
+- Create a JHU-specific Dockerfile (`Dockerfile.jhu`) optimized for AWS container services
 - Enable configuration through environment variables for AWS Secrets Manager and Parameter Store integration
 - Implement container health checks for orchestration platform compatibility
 - Support external volume mounts for persistent data (EFS or EBS)
@@ -102,7 +102,7 @@ The deployment process follows these stages:
 
 ## Components and Interfaces
 
-### 1. Dockerfile.jhu-aws
+### 1. Dockerfile.jhu
 
 **Purpose**: JHU-specific multi-stage Dockerfile optimized for AWS deployment
 
@@ -206,7 +206,7 @@ Spring Boot automatically converts environment variables with underscores to pro
 
 ```bash
 # Build image with proper tags
-docker build -f Dockerfile.jhu-aws \
+docker build -f Dockerfile.jhu \
   --build-arg VERSION=4.3.2 \
   --build-arg VIREO_GIT_SHA_FULL=$(git rev-parse HEAD) \
   --build-arg VIREO_GIT_SHA_SHORT=$(git rev-parse --short=12 HEAD) \
@@ -410,7 +410,7 @@ docker run -p 9000:9000 \
 | Health Checks | Optional | Required (ECS) |
 
 **Dockerfile Compatibility**:
-- Same Dockerfile.jhu-aws works for both scenarios
+- Same Dockerfile.jhu works for both scenarios
 - Configuration differences handled via environment variables
 - No code changes needed between environments
 - Promotes dev/prod parity
@@ -688,7 +688,7 @@ Together, these approaches provide comprehensive coverage: unit tests catch conc
 ### Unit Testing Strategy
 
 **Dockerfile Validation Tests**:
-- Verify Dockerfile.jhu-aws exists and is valid Docker syntax
+- Verify Dockerfile.jhu exists and is valid Docker syntax
 - Verify multi-stage build with exactly 2 FROM statements
 - Verify HEALTHCHECK instruction with correct parameters (interval=30s, timeout=10s, retries=3, start-period=60s)
 - Verify USER directive sets UID 1000
@@ -832,7 +832,7 @@ Arbitrary<String> logMessage() {
 ### Integration Testing
 
 **Local Docker Testing**:
-- Build image locally: `docker build -f Dockerfile.jhu-aws -t vireo-jhu-aws:test .`
+- Build image locally: `docker build -f Dockerfile.jhu -t vireo-jhu-aws:test .`
 - Run with PostgreSQL: `docker-compose -f docker-compose-test.yml up`
 - Verify health check: `docker inspect --format='{{.State.Health.Status}}' vireo`
 - Test volume mounts: Mount local directory and verify file persistence
@@ -859,7 +859,7 @@ mvn test -Dtest=DockerfileValidationTest,EntrypointScriptTest
 mvn test -Dtest=ConfigurationPropertyTest,LoggingPropertyTest
 
 # Build and test Docker image
-docker build -f Dockerfile.jhu-aws -t vireo-jhu-aws:test .
+docker build -f Dockerfile.jhu -t vireo-jhu-aws:test .
 docker run --rm -e SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/vireo vireo-jhu-aws:test
 ```
 

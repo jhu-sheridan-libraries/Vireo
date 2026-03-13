@@ -23,7 +23,7 @@ This document specifies requirements for building a production-ready Docker imag
 
 #### Acceptance Criteria
 
-1. THE Build_Process SHALL create a Dockerfile named `Dockerfile.jhu-aws` based on the Base_Dockerfile
+1. THE Build_Process SHALL create a Dockerfile named `Dockerfile.jhu` based on the Base_Dockerfile
 2. THE JHU_Docker_Image SHALL use the existing multi-stage build pattern (Maven stage and JRE stage)
 3. THE JHU_Docker_Image SHALL run the Vireo_Application as a non-root user with UID 1000
 4. THE JHU_Docker_Image SHALL expose port 9000 for HTTP traffic
@@ -153,7 +153,7 @@ This document specifies requirements for building a production-ready Docker imag
 2. THE Build_Process SHALL document all required build arguments and their purposes
 3. THE Build_Process SHALL document all required environment variables for runtime configuration
 4. THE Build_Process SHALL provide example docker run commands for local testing
-5. THE Build_Process SHALL document the differences between Dockerfile and Dockerfile.jhu-aws
+5. THE Build_Process SHALL document the differences between Dockerfile and Dockerfile.jhu
 6. THE Build_Process SHALL document how to run Docker locally for development environments
 7. THE Build_Process SHALL document how to run Docker for production environments with appropriate configuration
 8. THE Build_Process SHALL document how to manually push images to GHCR and ECR

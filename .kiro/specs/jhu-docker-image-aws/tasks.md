@@ -6,8 +6,8 @@ This implementation plan creates a production-ready Docker image of the Vireo ET
 
 ## Tasks
 
-- [ ] 1. Create Dockerfile.jhu-aws with health checks and AWS optimizations
-  - Create `Dockerfile.jhu-aws` based on existing `Dockerfile` with multi-stage build (Maven + JRE stages)
+- [x] 1. Create Dockerfile.jhu with health checks and AWS optimizations
+  - Create `Dockerfile.jhu` based on existing `Dockerfile` with multi-stage build (Maven + JRE stages)
   - Add HEALTHCHECK instruction: `wget --no-verbose --tries=1 --spider http://localhost:9000/` with interval=30s, timeout=10s, retries=3, start-period=60s
   - Add image labels for version, full Git SHA (40 chars), short Git SHA (12 chars), build timestamp, vendor (Johns Hopkins University)
   - Add JHU-specific label: `edu.jhu.vireo.build-label` following format `[Vireo-Head-SHA]-config-[Deployment-Head-SHA]` using 12-character short SHAs
@@ -108,7 +108,7 @@ This implementation plan creates a production-ready Docker image of the Vireo ET
 
 - [ ] 7. Create docker-compose-test.yml for local testing
   - Create `docker-compose-test.yml` for local integration testing
-  - Define vireo service using Dockerfile.jhu-aws with build context
+  - Define vireo service using Dockerfile.jhu with build context
   - Define PostgreSQL service with test database configuration
   - Configure environment variables for vireo service (database connection, secrets, app config)
   - Configure volume mounts for /var/vireo and /vireo/logs
@@ -117,7 +117,7 @@ This implementation plan creates a production-ready Docker image of the Vireo ET
   - _Requirements: 5.1, 5.2, 5.3, 6.1, 6.2, 6.3, 6.4_
 
 - [ ] 8. Checkpoint - Verify Docker image builds and runs locally
-  - Build Docker image: `docker build -f Dockerfile.jhu-aws -t vireo-jhu-aws:test .`
+  - Build Docker image: `docker build -f Dockerfile.jhu -t vireo-jhu-aws:test .`
   - Run docker-compose-test.yml: `docker-compose -f docker-compose-test.yml up`
   - Verify application starts successfully and responds on port 9000
   - Verify health check passes: `docker inspect --format='{{.State.Health.Status}}' vireo`
@@ -127,7 +127,7 @@ This implementation plan creates a production-ready Docker image of the Vireo ET
 
 - [ ] 9. Write unit tests for Dockerfile validation
   - [ ] 9.1 Create test class `DockerfileValidationTest.java` in `src/test/java/org/tdl/vireo/docker/`
-    - Test Dockerfile.jhu-aws exists and is valid syntax
+    - Test Dockerfile.jhu exists and is valid syntax
     - Test multi-stage build has exactly 2 FROM statements (Maven + JRE)
     - Test HEALTHCHECK instruction present with correct parameters
     - Test USER directive sets UID 1000 (non-root user)
@@ -191,7 +191,7 @@ This implementation plan creates a production-ready Docker image of the Vireo ET
 
 
 - [ ] 11. Final checkpoint - Verify all components integrated
-  - Build Docker image with Dockerfile.jhu-aws
+  - Build Docker image with Dockerfile.jhu
   - Run full test suite: `mvn clean test`
   - Verify all unit tests pass (Dockerfile validation, entrypoint script, workflow)
   - Verify all property tests pass (100 iterations each)

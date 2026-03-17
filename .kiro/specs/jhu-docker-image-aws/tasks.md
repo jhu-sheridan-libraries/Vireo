@@ -69,7 +69,7 @@ This implementation plan creates a production-ready Docker image of the Vireo ET
     - _Requirements: 11.8, 12.1, 12.2, 7.7_
 
 
-- [ ] 5. Create ECS task definition template
+- [x] 5. Create ECS task definition template
   - Create `build/ecs-task-definition.json` template for AWS ECS deployment
   - Configure Fargate compatibility with 1 vCPU (1024 units) and 2GB memory (2048 MB)
   - Define container with GHCR image reference: `ghcr.io/jhu-sheridan-libraries/vireo:jhu-aws-{version}`

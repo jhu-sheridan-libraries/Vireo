@@ -1,0 +1,83 @@
+# Local integration testing compose file for JHU Docker image (Dockerfile.jhu)
+# Usage: docker-compose -f docker-compose-test.yml up --build
+
+networks:
+  vireo-test:
+
+volumes:
+  pgdata-test:
+  vireo-data:
+  vireo-logs:
+
+services:
+
+  db:
+    image: postgres:14-alpine
+    container_name: vireo-test-db
+    hostname: db
+    environment:
+      POSTGRES_DB: vireo
+      POSTGRES_USER: vireo
+      POSTGRES_PASSWORD: vireo
+    volumes:
+      - pgdata-test:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - vireo-test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vireo -d vireo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  vireo:
+    container_name: vireo-test
+    hostname: vireo
+    build:
+      dockerfile: Dockerfile.jhu
+      context: ./
+    ports:
+      - "9000:9000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Frontend config (required by docker-entrypoint.sh)
+      AUTH_SERVICE_URL: "window.location.protocol + '//' + window.location.host + window.location.base + '/mock/auth'"
+      LOCAL_AUTHENTICATION: "true"
+      STOMP_DEBUG: "false"
+      APP_PATH: /var/vireo
+
+      # Database connection (PostgreSQL)
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/vireo
+      SPRING_DATASOURCE_USERNAME: vireo
+      SPRING_DATASOURCE_PASSWORD: vireo
+      SPRING_DATASOURCE_DRIVERCLASSNAME: org.postgresql.Driver
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+
+      # Security secrets
+      AUTH_SECURITY_JWT_SECRET: test-jwt-secret
+      AUTH_SECURITY_JWT_ISSUER: vireo
+      AUTH_SECURITY_JWT_DURATION: "5"
+      APP_SECURITY_SECRET: test-app-secret
+
+      # Email (local testing)
+      APP_EMAIL_HOST: localhost
+      APP_EMAIL_FROM: noreply@test.local
+
+      # Logging
+      LOGGING_LEVEL_ORG_TDL: INFO
+    volumes:
+      - vireo-data:/var/vireo
+      - vireo-logs:/vireo/logs
+    networks:
+      - vireo-test
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s

@@ -20,7 +20,7 @@ This implementation plan creates a production-ready Docker image of the Vireo ET
   - Maintain non-root user (UID 1000) and expose port 9000
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 4.1, 4.2, 4.3, 9.4, 9.5, 9.6, 9.7, 9.8_
 
-- [ ] 2. Enhance docker-entrypoint.sh for environment variable validation
+- [x] 2. Enhance docker-entrypoint.sh for environment variable validation
   - Modify `build/docker-entrypoint.sh` to validate required environment variables before templating
   - Add validation for AUTH_SERVICE_URL, LOCAL_AUTHENTICATION, STOMP_DEBUG, APP_PATH
   - Exit with code 1 and descriptive error message if required variables are missing
@@ -29,7 +29,7 @@ This implementation plan creates a production-ready Docker image of the Vireo ET
   - _Requirements: 2.4, 7.4_
 
 
-- [ ] 3. Configure Spring Boot for environment variable overrides
+- [x] 3. Configure Spring Boot for environment variable overrides
   - Verify `src/main/resources/application.yml` supports environment variable overrides for database configuration
   - Document environment variable mappings in comments: SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, SPRING_DATASOURCE_PASSWORD, SPRING_JPA_DATABASE_PLATFORM
   - Document security secret mappings: AUTH_SECURITY_JWT_SECRET, APP_SECURITY_SECRET
@@ -39,8 +39,16 @@ This implementation plan creates a production-ready Docker image of the Vireo ET
   - Ensure logging outputs to STDOUT/STDERR (default Spring Boot behavior)
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 6.1, 6.2, 6.3, 6.4, 6.5, 7.1, 7.2, 7.5, 8.1, 8.2, 8.3, 8.4_
 
-- [ ] 4. Document image build and registry push process
-  - [ ] 4.1 Create build script or document manual build commands
+- [x] 3.1 Configure environment variable injection for local and AWS deployment
+  - Update `.env` to include all documented override variables from `application.yml` (add APP_SECURITY_SECRET, APP_EMAIL_HOST, APP_EMAIL_FROM, LOGGING_LEVEL_ORG_TDL if missing)
+  - Create `.env.aws.example` with placeholder values showing AWS Secrets Manager / Parameter Store sourced secrets (no real credentials)
+  - Update `docker-compose-JHU.yml` to pass Spring Boot override variables from `.env` to the vireo container via `env_file` (already present) and verify they reach the application
+  - Update `build/docker-entrypoint.sh` to optionally validate Spring Boot override variables (SPRING_DATASOURCE_URL, AUTH_SECURITY_JWT_SECRET, APP_SECURITY_SECRET) with warnings (not hard failures) when missing
+  - Ensure the ECS task definition template (task 5) references these same variable names in its `environment` and `secrets` sections for consistency
+  - _Requirements: 2.1, 2.2, 2.3, 2.4, 6.1, 6.2, 6.3, 6.5, 7.1, 7.2, 7.5, 7.6_
+
+- [x] 4. Document image build and registry push process
+  - [x] 4.1 Create build script or document manual build commands
     - Document Maven build command: `mvn clean package -Pproduction -Dmaven.test.skip=true`
     - Document Docker build command with all build args (VERSION, VIREO_GIT_SHA_FULL, VIREO_GIT_SHA_SHORT, DEPLOYMENT_CONFIG_SHA_FULL, DEPLOYMENT_CONFIG_SHA_SHORT, BUILD_TIMESTAMP)
     - Document how to extract version from pom.xml

@@ -2,9 +2,18 @@ server:
   port: 9000
   servlet:
     context-path:
+  # Graceful shutdown configuration for AWS ECS/Fargate
+  # Allows 25 seconds for in-flight requests to complete before shutdown
+  # Container stop timeout should be set to 30s to allow for this grace period
+  shutdown: graceful
 
 spring:
   profiles.active: ${profile}
+
+  lifecycle:
+    # Grace period for graceful shutdown (25s allows 5s buffer for container stop timeout of 30s)
+    # Override with environment variable: SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE
+    timeout-per-shutdown-phase: 25s
 
   jackson:
     parser:
@@ -41,6 +50,7 @@ spring:
       #platform: mysql
 
   datasource:
+    # Override with environment variable: SPRING_DATASOURCE_URL
     # H2
     url: jdbc:h2:mem:AZ;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     #url: jdbc:h2:file:./vireoh2.db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
@@ -55,10 +65,12 @@ spring:
     #driverClassName: com.mysql.jdbc.Driver
 
     # database username and password
+    # Override with environment variables: SPRING_DATASOURCE_USERNAME, SPRING_DATASOURCE_PASSWORD
     username: vireo
     password: vireo
 
   jpa:
+    # Override with environment variable: SPRING_JPA_DATABASE_PLATFORM
     # H2
     #database-platform: org.hibernate.dialect.H2Dialect
     # PostgreSQL
@@ -91,6 +103,8 @@ spring:
 
 
 # logging
+# Logs output to STDOUT/STDERR by default (captured by CloudWatch in AWS)
+# Override with environment variable: LOGGING_LEVEL_ORG_TDL
 logging:
   level:
     org:
@@ -140,11 +154,13 @@ app:
 
   security:
     # edu.tamu.weaver.auth.service.CryptoService
+    # Override with environment variable: APP_SECURITY_SECRET
     secret: verysecretsecret
     # edu.tamu.weaver.filter.CorsFilter
     allow-access: http://localhost:${server.port}
 
   # edu.tamu.weaver.email.config.WeaverEmailConfig
+  # Override with environment variables: APP_EMAIL_HOST, APP_EMAIL_FROM
   email:
     host: relay.tamu.edu
     from: noreply@library.tamu.edu
@@ -181,6 +197,7 @@ app:
   useNetidAsIdentifier: false
 
 # edu.tamu.weaver.token.service.TokenService
+# Override with environment variable: AUTH_SECURITY_JWT_SECRET
 auth:
   security.jwt:
     secret: verysecretsecret

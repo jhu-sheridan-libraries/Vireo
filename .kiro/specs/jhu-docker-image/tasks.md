@@ -124,7 +124,7 @@ This implementation plan creates a production-ready Docker image of the Vireo ET
   - Add health checks for both services
   - _Requirements: 5.1, 5.2, 5.3, 6.1, 6.2, 6.3, 6.4_
 
-- [ ] 8. Checkpoint - Verify Docker image builds and runs locally
+- [x] 8. Checkpoint - Verify Docker image builds and runs locally
   - Build Docker image: `docker build -f Dockerfile.jhu -t vireo-jhu-aws:test .`
   - Run docker-compose-test.yml: `docker-compose -f docker-compose-test.yml up`
   - Verify application starts successfully and responds on port 9000

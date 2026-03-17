@@ -18,7 +18,7 @@ ARG DEPLOYMENT_CONFIG_SHA_SHORT=unknown
 ARG BUILD_TIMESTAMP=unknown
 
 # Maven stage.
-FROM maven:3-eclipse-temurin-11-alpine as maven
+FROM maven:3-eclipse-temurin-11-alpine AS maven
 ARG USER_ID
 ARG USER_NAME
 ARG HOME_DIR

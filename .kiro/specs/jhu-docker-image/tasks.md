@@ -84,7 +84,7 @@ This implementation plan creates a production-ready Docker image of the Vireo ET
   - Set stopTimeout to 30 seconds for graceful shutdown
   - _Requirements: 5.1, 5.2, 5.4, 6.1, 6.2, 6.3, 7.1, 7.2, 7.5, 7.6, 8.5, 10.1, 10.2, 10.3, 10.4, 10.5, 12.4_
 
-- [-] 6. Write documentation (README)
+- [x] 6. Write documentation (README)
   - [x] 6.1 Create README.md in `.kiro/specs/jhu-docker-image-aws/`
     - Document purpose and differences from base Dockerfile
     - Document Docker build command with all build arguments (including SHA arguments)

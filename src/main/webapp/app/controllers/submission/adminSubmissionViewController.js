@@ -113,10 +113,8 @@ vireo.controller("AdminSubmissionViewController", function ($anchorScroll, $cont
             title += ` (${degree} - ${major})`;
         } else if (degree) {
             title += ` (${degree})`;
-        }
-
-        if (submission.organization && submission.organization.name) {
-            title += ` - ${submission.organization.name}`;
+        } else if (submission.organization.name) {
+            title += ` (${submission.organization.name})`;
         }
 
         return title;

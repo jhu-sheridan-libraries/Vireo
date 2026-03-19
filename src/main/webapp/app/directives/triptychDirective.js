@@ -359,12 +359,13 @@ vireo.directive("triptych", function () {
                 }
             };
 
-            // Auto-open the first organization panel on page load
-            $timeout(function() {
-                if ($scope.organizations && $scope.organizations.length > 0) {
-                    $scope.selectOrganization($scope.organizations[0]);
+            // Auto-open the first organization panel once organizations are available
+            var unwatch = $scope.$watchCollection('organizations', function(organizations) {
+                if (organizations && organizations.length > 0) {
+                    unwatch();
+                    $scope.selectOrganization(organizations[0]);
                 }
-            }, 500);
+            });
 
         },
         link: function ($scope, element, attr) {

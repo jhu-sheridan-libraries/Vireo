@@ -174,12 +174,12 @@ Spring Boot automatically maps environment variables to properties: underscores 
 
 ## Running Locally
 
-### Using docker-compose-test.yml
+### Using docker-compose.yml
 
-The `docker-compose-test.yml` file provides a local testing environment with PostgreSQL:
+The `docker-compose.yml` file provides a local testing environment with PostgreSQL:
 
 ```bash
-docker-compose -f docker-compose-test.yml up
+docker-compose up
 ```
 
 This starts the Vireo application and a PostgreSQL database, pre-configured for local development. The application will be available at `http://localhost:9000`.
@@ -328,7 +328,7 @@ Ensure the ECS task execution role has `ecr:GetAuthorizationToken` and `ecr:Batc
 | `build/docker-entrypoint.sh` | Container entrypoint: validates env vars, templates appConfig.js |
 | `build/appConfig.js.template` | Frontend configuration template (envsubst) |
 | `build/ecs-task-definition.json` | ECS/Fargate task definition template |
-| `docker-compose-JHU.yml` | Docker Compose for JHU deployment with httpd |
+| `docker-compose.yml` | Docker Compose for local testing |
 | `.env` | Default environment variables for local development |
 | `.env.aws.example` | Example AWS environment variables with placeholder values |
 | `src/main/resources/application.yml` | Spring Boot configuration (overridable via env vars) |

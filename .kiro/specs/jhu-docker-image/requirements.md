@@ -125,7 +125,7 @@ This document specifies requirements for building a Docker image of the Vireo ET
 
 #### Acceptance Criteria
 
-1. THE Compose_Stack SHALL define a `docker-compose-test.yml` file for local integration testing
+1. THE Compose_Stack SHALL define a `docker-compose.yml` file for local integration testing
 2. THE Compose_Stack SHALL include a PostgreSQL service with a preconfigured test database
 3. THE Compose_Stack SHALL include the Vireo service built from Dockerfile.jhu
 4. THE Compose_Stack SHALL configure the Vireo service to depend on the PostgreSQL service being healthy before starting
@@ -141,6 +141,6 @@ This document specifies requirements for building a Docker image of the Vireo ET
 1. THE Build_Process SHALL provide documentation describing the Docker build command with required build arguments
 2. THE Build_Process SHALL document all required and optional environment variables for runtime configuration
 3. THE Build_Process SHALL provide example `docker run` commands for standalone local testing
-4. THE Build_Process SHALL document how to use `docker-compose-test.yml` for local stack testing
+4. THE Build_Process SHALL document how to use `docker-compose.yml` for local stack testing
 5. THE Build_Process SHALL document the differences between `Dockerfile` and `Dockerfile.jhu`
 6. THE Build_Process SHALL document how to switch between H2 and PostgreSQL database backends

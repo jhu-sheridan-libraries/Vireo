@@ -58,14 +58,14 @@ This implementation plan creates a Docker image of the Vireo ETD Management Syst
     - Document all required environment variables with descriptions and examples
     - Document optional environment variables
     - Provide example `docker run` commands for local testing with H2
-    - Document `docker-compose-test.yml` usage for local stack testing with PostgreSQL
+    - Document `docker-compose.yml` usage for local stack testing with PostgreSQL
     - Document how to switch between H2 and PostgreSQL database backends
     - Include troubleshooting section for common local errors
     - Include security best practices (no hardcoded secrets, non-root user)
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6_
 
-- [x] 6. Create docker-compose-test.yml for local testing
-  - Create `docker-compose-test.yml` for local integration testing
+- [x] 6. Create docker-compose.yml for local testing
+  - Create `docker-compose.yml` for local integration testing
   - Define vireo service using Dockerfile.jhu with build context
   - Define PostgreSQL service with test database configuration and health check
   - Configure environment variables for vireo service (database connection, secrets, app config)
@@ -75,67 +75,26 @@ This implementation plan creates a Docker image of the Vireo ETD Management Syst
   - Configure vireo service to depend on db being healthy
   - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 5.1, 5.2, 6.1, 6.2, 6.3_
 
-- [ ] 7. Checkpoint - Verify Docker image builds and runs locally
+- [x] 7. Checkpoint - Verify Docker image builds and runs locally
   - Build Docker image: `docker build -f Dockerfile.jhu -t vireo-jhu:test .`
-  - Run docker-compose-test.yml: `docker-compose -f docker-compose-test.yml up --build`
+  - Run docker-compose.yml: `docker-compose up --build`
   - Verify application starts successfully and responds on port 9000
   - Verify health check passes: `docker inspect --format='{{.State.Health.Status}}' vireo-test`
   - Verify logs appear in `docker-compose logs vireo`
   - Verify environment variables override configuration
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 8. Write unit tests for Dockerfile validation
-  - [ ] 8.1 Create test class `DockerfileValidationTest.java` in `src/test/java/org/tdl/vireo/docker/`
-    - Test Dockerfile.jhu exists and is valid syntax
-    - Test multi-stage build has exactly 2 FROM statements (Maven + JRE)
-    - Test HEALTHCHECK instruction present with correct parameters
-    - Test USER directive sets UID 1000 (non-root user)
-    - Test EXPOSE 9000 directive present
-    - Test Maven build uses -Pproduction and -Dmaven.test.skip=true
-    - Test NODE_ENV=production in Maven stage
-    - Test gettext package installed for envsubst
-    - Test wget package installed for health check
-    - Test OCI image labels present: title, version, created, revision, source, vendor
-    - Test no hardcoded secrets in Dockerfile
-    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 4.1, 4.2, 4.3, 9.2, 9.3, 7.3_
-
-  - [ ]* 8.2 Write property test for environment variable configuration override
-    - **Property 1: Environment Variable Configuration Override**
-    - **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 6.1, 6.2, 6.3, 6.5, 7.1, 7.2**
-    - Create test class `ConfigurationPropertyTest.java` in `src/test/java/org/tdl/vireo/docker/`
-    - Generate random valid configuration values for Spring Boot properties
-    - Set values as environment variables and start application
-    - Verify application uses environment variable values instead of defaults
-    - Run minimum 100 iterations per property
-    - _Requirements: 2.1, 2.2, 2.3, 2.4, 6.1, 6.2, 6.3, 6.5, 7.1, 7.2_
-
-  - [ ]* 8.3 Write property test for application logging to standard streams
-    - **Property 2: Application Logging to Standard Streams**
-    - **Validates: Requirements 2.5**
-    - Create test class `LoggingPropertyTest.java` in `src/test/java/org/tdl/vireo/docker/`
-    - Generate log messages at various levels (INFO, DEBUG, WARN, ERROR)
-    - Capture container STDOUT and STDERR output
-    - Verify messages appear on standard streams
-    - Run minimum 100 iterations
-    - _Requirements: 2.5_
-
-- [ ] 9. Final checkpoint - Ensure all tests pass
+- [ ] 8. Final checkpoint - Ensure all tests pass
   - Run full test suite: `mvn clean test`
-  - Verify all unit tests pass (Dockerfile validation)
-  - Test docker-compose-test.yml with PostgreSQL integration
+  - Test docker-compose.yml with PostgreSQL integration
   - Verify README documentation is complete and accurate
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
 
-- Tasks marked with `*` are optional testing tasks and can be skipped for faster MVP
 - Each task references specific requirements for traceability
-- Checkpoints (tasks 7 and 9) ensure incremental validation
-- Property tests validate universal correctness properties with 100 iterations minimum
-- Unit tests validate specific examples, edge cases, and Dockerfile structure
+- Checkpoints (tasks 7 and 8) ensure incremental validation
 - All Docker-related files are in the repository root or `build/` directory
-- Test files follow the project structure convention: `src/test/java/org/tdl/vireo/docker/`
-- The jqwik library is used for property-based testing in Java
 - Image is intended for local testing only — not for CI/CD or production deployment
 - Docker image runs as non-root user (UID 1000) for security
 - Secrets must never be committed to the repository — use environment variables or `.env` files (gitignored)

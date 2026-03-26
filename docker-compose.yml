@@ -1,5 +1,5 @@
 # Local integration testing compose file for JHU Docker image (Dockerfile.jhu)
-# Usage: docker-compose -f docker-compose-test.yml up --build
+# Usage: docker-compose up --build
 
 networks:
   vireo-test:

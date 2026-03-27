@@ -81,8 +81,8 @@ ARG BUILD_TIMESTAMP
 ENV APP_PATH=$APP_PATH
 
 # Add OCI-compliant image labels
-LABEL org.opencontainers.image.title="Vireo ETD Management System - JHU AWS"
-LABEL org.opencontainers.image.description="JHU-specific Docker image for AWS ECS/Fargate deployment"
+LABEL org.opencontainers.image.title="Vireo ETD Management System - JHU"
+LABEL org.opencontainers.image.description="JHU-specific Docker image for local testing and deployment"
 LABEL org.opencontainers.image.version="${VERSION}"
 LABEL org.opencontainers.image.created="${BUILD_TIMESTAMP}"
 LABEL org.opencontainers.image.revision="${VIREO_GIT_SHA_FULL}"

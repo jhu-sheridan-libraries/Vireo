@@ -27,7 +27,7 @@ Images are labeled with a combined build label following this format:
 
 Example:
 ```
-Tag:   jhu-aws-a1b2c3d4e5f6
+Tag:   jhu-vireo-a1b2c3d4e5f6
 Label: a1b2c3d4e5f6-config-z9y8x7w6v5u4
 ```
 
@@ -78,9 +78,9 @@ docker build -f Dockerfile.jhu \
   --build-arg DEPLOYMENT_CONFIG_SHA_SHORT=$DEPLOYMENT_CONFIG_SHA_SHORT \
   --build-arg BUILD_TIMESTAMP=$BUILD_TIMESTAMP \
   -t ghcr.io/jhu-sheridan-libraries/vireo:latest \
-  -t ghcr.io/jhu-sheridan-libraries/vireo:jhu-aws-$VERSION \
-  -t ghcr.io/jhu-sheridan-libraries/vireo:jhu-aws-$VIREO_GIT_SHA_SHORT \
-  -t ghcr.io/jhu-sheridan-libraries/vireo:jhu-aws-$BUILD_TIMESTAMP \
+  -t ghcr.io/jhu-sheridan-libraries/vireo:jhu-vireo-$VERSION \
+  -t ghcr.io/jhu-sheridan-libraries/vireo:jhu-vireo-$VIREO_GIT_SHA_SHORT \
+  -t ghcr.io/jhu-sheridan-libraries/vireo:jhu-vireo-$BUILD_TIMESTAMP \
   .
 ```
 
@@ -109,9 +109,9 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 
 # Push all tags
 docker push ghcr.io/jhu-sheridan-libraries/vireo:latest
-docker push ghcr.io/jhu-sheridan-libraries/vireo:jhu-aws-$VERSION
-docker push ghcr.io/jhu-sheridan-libraries/vireo:jhu-aws-$VIREO_GIT_SHA_SHORT
-docker push ghcr.io/jhu-sheridan-libraries/vireo:jhu-aws-$BUILD_TIMESTAMP
+docker push ghcr.io/jhu-sheridan-libraries/vireo:jhu-vireo-$VERSION
+docker push ghcr.io/jhu-sheridan-libraries/vireo:jhu-vireo-$VIREO_GIT_SHA_SHORT
+docker push ghcr.io/jhu-sheridan-libraries/vireo:jhu-vireo-$BUILD_TIMESTAMP
 ```
 
 ### Amazon Elastic Container Registry (ECR)
@@ -125,12 +125,12 @@ aws ecr get-login-password --region <region> | \
 docker tag ghcr.io/jhu-sheridan-libraries/vireo:latest \
   <account-id>.dkr.ecr.<region>.amazonaws.com/vireo:latest
 
-docker tag ghcr.io/jhu-sheridan-libraries/vireo:jhu-aws-$VERSION \
-  <account-id>.dkr.ecr.<region>.amazonaws.com/vireo:jhu-aws-$VERSION
+docker tag ghcr.io/jhu-sheridan-libraries/vireo:jhu-vireo-$VERSION \
+  <account-id>.dkr.ecr.<region>.amazonaws.com/vireo:jhu-vireo-$VERSION
 
 # Push
 docker push <account-id>.dkr.ecr.<region>.amazonaws.com/vireo:latest
-docker push <account-id>.dkr.ecr.<region>.amazonaws.com/vireo:jhu-aws-$VERSION
+docker push <account-id>.dkr.ecr.<region>.amazonaws.com/vireo:jhu-vireo-$VERSION
 ```
 
 ## Environment Variables
@@ -193,7 +193,7 @@ docker run -p 9000:9000 \
   -e STOMP_DEBUG=false \
   -e APP_PATH=/var/vireo \
   -v $(pwd)/data:/var/vireo \
-  ghcr.io/jhu-sheridan-libraries/vireo:jhu-aws-latest
+  ghcr.io/jhu-sheridan-libraries/vireo:jhu-vireo-latest
 ```
 
 ### Using docker run (local PostgreSQL)
@@ -212,7 +212,7 @@ docker run -p 9000:9000 \
   -e AUTH_SECURITY_JWT_SECRET=local-dev-secret \
   -e APP_SECURITY_SECRET=local-dev-secret \
   -v $(pwd)/data:/var/vireo \
-  ghcr.io/jhu-sheridan-libraries/vireo:jhu-aws-latest
+  ghcr.io/jhu-sheridan-libraries/vireo:jhu-vireo-latest
 ```
 
 ## Production Deployment

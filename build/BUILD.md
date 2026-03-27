@@ -78,7 +78,7 @@ docker build -f Dockerfile.jhu \
   --build-arg DEPLOYMENT_CONFIG_SHA_FULL=$DEPLOYMENT_CONFIG_SHA_FULL \
   --build-arg DEPLOYMENT_CONFIG_SHA_SHORT=$DEPLOYMENT_CONFIG_SHA_SHORT \
   --build-arg BUILD_TIMESTAMP=$BUILD_TIMESTAMP \
-  -t vireo-jhu-aws:latest \
+  -t vireo-jhu-vireo:latest \
   .
 ```
 
@@ -89,19 +89,19 @@ Each build should produce multiple tags for flexibility:
 | Tag Format | Example | Purpose |
 |---|---|---|
 | `latest` | `latest` | Most recent build |
-| `jhu-aws-{version}` | `jhu-aws-4.3.2` | Semantic version from pom.xml |
-| `jhu-aws-{short-sha}` | `jhu-aws-a1b2c3d4e5f6` | 12-char Git SHA for traceability |
-| `jhu-aws-{timestamp}` | `jhu-aws-20260316-143022` | Build timestamp for ordering |
+| `jhu-vireo-{version}` | `jhu-vireo-4.3.2` | Semantic version from pom.xml |
+| `jhu-vireo-{short-sha}` | `jhu-vireo-a1b2c3d4e5f6` | 12-char Git SHA for traceability |
+| `jhu-vireo-{timestamp}` | `jhu-vireo-20260316-143022` | Build timestamp for ordering |
 
 ### Apply All Tags
 
 ```bash
 REGISTRY=ghcr.io/jhu-sheridan-libraries/vireo
 
-docker tag vireo-jhu-aws:latest $REGISTRY:latest
-docker tag vireo-jhu-aws:latest $REGISTRY:jhu-aws-$VERSION
-docker tag vireo-jhu-aws:latest $REGISTRY:jhu-aws-$VIREO_GIT_SHA_SHORT
-docker tag vireo-jhu-aws:latest $REGISTRY:jhu-aws-$BUILD_TIMESTAMP
+docker tag vireo-jhu-vireo:latest $REGISTRY:latest
+docker tag vireo-jhu-vireo:latest $REGISTRY:jhu-vireo-$VERSION
+docker tag vireo-jhu-vireo:latest $REGISTRY:jhu-vireo-$VIREO_GIT_SHA_SHORT
+docker tag vireo-jhu-vireo:latest $REGISTRY:jhu-vireo-$BUILD_TIMESTAMP
 ```
 
 Or build with all tags in one command:
@@ -115,9 +115,9 @@ docker build -f Dockerfile.jhu \
   --build-arg DEPLOYMENT_CONFIG_SHA_SHORT=$DEPLOYMENT_CONFIG_SHA_SHORT \
   --build-arg BUILD_TIMESTAMP=$BUILD_TIMESTAMP \
   -t $REGISTRY:latest \
-  -t $REGISTRY:jhu-aws-$VERSION \
-  -t $REGISTRY:jhu-aws-$VIREO_GIT_SHA_SHORT \
-  -t $REGISTRY:jhu-aws-$BUILD_TIMESTAMP \
+  -t $REGISTRY:jhu-vireo-$VERSION \
+  -t $REGISTRY:jhu-vireo-$VIREO_GIT_SHA_SHORT \
+  -t $REGISTRY:jhu-vireo-$BUILD_TIMESTAMP \
   .
 ```
 
@@ -137,7 +137,7 @@ The built image includes OCI-standard and JHU-specific labels:
 Inspect labels on a built image:
 
 ```bash
-docker inspect --format='{{json .Config.Labels}}' vireo-jhu-aws:latest | python -m json.tool
+docker inspect --format='{{json .Config.Labels}}' vireo-jhu-vireo:latest | python -m json.tool
 ```
 
 ## Push to GitHub Container Registry (GHCR)
@@ -148,9 +148,9 @@ echo $GHCR_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 
 # Push all tags
 docker push $REGISTRY:latest
-docker push $REGISTRY:jhu-aws-$VERSION
-docker push $REGISTRY:jhu-aws-$VIREO_GIT_SHA_SHORT
-docker push $REGISTRY:jhu-aws-$BUILD_TIMESTAMP
+docker push $REGISTRY:jhu-vireo-$VERSION
+docker push $REGISTRY:jhu-vireo-$VIREO_GIT_SHA_SHORT
+docker push $REGISTRY:jhu-vireo-$BUILD_TIMESTAMP
 ```
 
 > Store your GHCR token securely. Never commit tokens or credentials to the repository.
@@ -168,16 +168,16 @@ aws ecr get-login-password --region $AWS_REGION | \
   docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
 # Tag for ECR
-docker tag vireo-jhu-aws:latest $ECR_REPO:latest
-docker tag vireo-jhu-aws:latest $ECR_REPO:jhu-aws-$VERSION
-docker tag vireo-jhu-aws:latest $ECR_REPO:jhu-aws-$VIREO_GIT_SHA_SHORT
-docker tag vireo-jhu-aws:latest $ECR_REPO:jhu-aws-$BUILD_TIMESTAMP
+docker tag vireo-jhu-vireo:latest $ECR_REPO:latest
+docker tag vireo-jhu-vireo:latest $ECR_REPO:jhu-vireo-$VERSION
+docker tag vireo-jhu-vireo:latest $ECR_REPO:jhu-vireo-$VIREO_GIT_SHA_SHORT
+docker tag vireo-jhu-vireo:latest $ECR_REPO:jhu-vireo-$BUILD_TIMESTAMP
 
 # Push to ECR
 docker push $ECR_REPO:latest
-docker push $ECR_REPO:jhu-aws-$VERSION
-docker push $ECR_REPO:jhu-aws-$VIREO_GIT_SHA_SHORT
-docker push $ECR_REPO:jhu-aws-$BUILD_TIMESTAMP
+docker push $ECR_REPO:jhu-vireo-$VERSION
+docker push $ECR_REPO:jhu-vireo-$VIREO_GIT_SHA_SHORT
+docker push $ECR_REPO:jhu-vireo-$BUILD_TIMESTAMP
 ```
 
 > ECR authentication tokens expire after 12 hours. Re-authenticate if pushes fail with auth errors.

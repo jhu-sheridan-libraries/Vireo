@@ -2,7 +2,7 @@
   "_comment": "ECS Task Definition Template for Vireo ETD Management System - JHU AWS Deployment",
   "_usage": "Replace placeholder values (marked with <...>) before registering with ECS",
   "_secrets_note": "Secrets can use either AWS Secrets Manager or Parameter Store ARNs. Secrets Manager format: arn:aws:secretsmanager:<region>:<account-id>:secret:<secret-name>. Parameter Store format: arn:aws:ssm:<region>:<account-id>:parameter/<parameter-path>",
-  "family": "vireo-jhu-aws",
+  "family": "vireo-jhu-vireo",
   "networkMode": "awsvpc",
   "requiresCompatibilities": [
     "FARGATE",
@@ -15,7 +15,7 @@
   "containerDefinitions": [
     {
       "name": "vireo",
-      "image": "ghcr.io/jhu-sheridan-libraries/vireo:jhu-aws-<version>",
+      "image": "ghcr.io/jhu-sheridan-libraries/vireo:jhu-vireo-<version>",
       "essential": true,
       "portMappings": [
         {
@@ -79,7 +79,7 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/vireo-jhu-aws",
+          "awslogs-group": "/ecs/vireo-jhu-vireo",
           "awslogs-region": "<region>",
           "awslogs-stream-prefix": "vireo"
         }

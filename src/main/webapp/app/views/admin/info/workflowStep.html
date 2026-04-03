@@ -7,6 +7,16 @@
 </div>
 <div class="col-md-6 col-sm-12 info-col">
   <ul class="info-list">
+    <li class="list-unstyled" ng-if="submission.organization && workflowStep.name === 'Personal Information'">
+      <div class="info-container form-group">
+        <label class="info-label">
+          <span>Organization</span>
+        </label>
+        <span class="info-data form-control">
+          <span>{{submission.organization.name}}</span>
+        </span>
+      </div>
+    </li>
     <li class="list-unstyled" ng-repeat="fieldProfile in workflowStep.aggregateFieldProfiles | filter:{enabled: true}" ng-if="$index >= (workflowStep.aggregateFieldProfiles.length / 2) && fieldProfile.inputType.name !== 'INPUT_FILE'">
       <submission-info type="view" submission="submission" field-profile="fieldProfile" label="{{fieldProfile.gloss=='Proquest Publication' ? 'Proquest Release' : fieldProfile.gloss}}" show-vocabulary-word="showVocabularyWord"></submission-info>
     </li>

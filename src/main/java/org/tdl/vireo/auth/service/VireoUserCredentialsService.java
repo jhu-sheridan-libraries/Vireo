@@ -68,6 +68,15 @@ public class VireoUserCredentialsService extends UserCredentialsService<User, Us
             ? userRepo.findByNetid(shibNetid)
             : userRepo.findByEmail(shibEmail);
 
+        // Fall back to the other identifier so a returning user whose email
+        // domain has changed (or netid has changed) is matched to their
+        // existing record instead of colliding on a unique constraint.
+        if (user == null) {
+            user = useNetidAsIdentifier
+                ? (StringUtils.isNotEmpty(shibEmail) ? userRepo.findByEmail(shibEmail) : null)
+                : (StringUtils.isNotEmpty(shibNetid) ? userRepo.findByNetid(shibNetid) : null);
+        }
+
         if (user == null) {
             Role role = Role.ROLE_STUDENT;
 

@@ -68,6 +68,15 @@ public class VireoUserCredentialsService extends UserCredentialsService<User, Us
             ? userRepo.findByNetid(shibNetid)
             : userRepo.findByEmail(shibEmail);
 
+        // Fall back to the other identifier so a returning user whose email
+        // domain has changed (or netid has changed) is matched to their
+        // existing record instead of colliding on a unique constraint.
+        if (user == null) {
+            user = useNetidAsIdentifier
+                ? (StringUtils.isNotEmpty(shibEmail) ? userRepo.findByEmail(shibEmail) : null)
+                : (StringUtils.isNotEmpty(shibNetid) ? userRepo.findByNetid(shibNetid) : null);
+        }
+
         if (user == null) {
             Role role = Role.ROLE_STUDENT;
 
@@ -104,7 +113,7 @@ public class VireoUserCredentialsService extends UserCredentialsService<User, Us
 
                 if (StringUtils.isNotEmpty(shibBirthYearValue)) {
                     int shibBirthYear = Integer.parseInt(shibBirthYearValue);
-                    if (shibBirthYear != user.getBirthYear()) {
+                    if (user.getBirthYear() == null || shibBirthYear != user.getBirthYear()) {
                         user.setBirthYear(shibBirthYear);
                         isUserUpdated = true;
                     }
@@ -116,7 +125,7 @@ public class VireoUserCredentialsService extends UserCredentialsService<User, Us
                 isUserUpdated = true;
             }
 
-            if (StringUtils.isNotEmpty(shibMiddleName) && !user.getMiddleName().equals(shibMiddleName)) {
+            if (StringUtils.isNotEmpty(shibMiddleName) && (user.getMiddleName() == null || !user.getMiddleName().equals(shibMiddleName))) {
                 user.setMiddleName(shibMiddleName);
                 isUserUpdated = true;
             }
@@ -126,7 +135,7 @@ public class VireoUserCredentialsService extends UserCredentialsService<User, Us
                 isUserUpdated = true;
             }
 
-            if (StringUtils.isNotEmpty(shibOrcid) && !user.getOrcid().equals(shibOrcid)) {
+            if (StringUtils.isNotEmpty(shibOrcid) && (user.getOrcid() == null || !user.getOrcid().equals(shibOrcid))) {
                 user.setOrcid(shibOrcid);
                 isUserUpdated = true;
             }

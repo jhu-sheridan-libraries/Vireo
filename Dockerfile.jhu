@@ -1,0 +1,138 @@
+# JHU-specific Dockerfile optimized for AWS ECS/Fargate deployment
+# Based on the base Dockerfile with AWS-specific enhancements
+
+# Build arguments.
+ARG USER_ID=1000
+ARG USER_NAME=vireo
+ARG HOME_DIR=/$USER_NAME
+ARG SOURCE_DIR=$HOME_DIR/source
+ARG APP_PATH=/var/vireo
+ARG NODE_ENV=production
+
+# Image metadata build arguments
+ARG VERSION=unknown
+ARG VIREO_GIT_SHA_FULL=unknown
+ARG VIREO_GIT_SHA_SHORT=unknown
+ARG DEPLOYMENT_CONFIG_SHA_FULL=unknown
+ARG DEPLOYMENT_CONFIG_SHA_SHORT=unknown
+ARG BUILD_TIMESTAMP=unknown
+
+# Maven stage.
+FROM maven:3-eclipse-temurin-11-alpine AS maven
+ARG USER_ID
+ARG USER_NAME
+ARG HOME_DIR
+ARG SOURCE_DIR
+ARG APP_PATH
+ARG NODE_ENV
+
+ENV NODE_ENV=$NODE_ENV
+
+# Create the group (use a high ID to attempt to avoid conflits).
+RUN addgroup -g $USER_ID $USER_NAME
+
+# Create the user (use a high ID to attempt to avoid conflits).
+RUN adduser -h $HOME_DIR -u $USER_ID -G $USER_NAME -D $USER_NAME
+
+# Ensure source directory exists and has appropriate file permissions.
+RUN mkdir -p $SOURCE_DIR && \
+    chown $USER_ID:$USER_ID $SOURCE_DIR && \
+    chmod g+s $SOURCE_DIR
+
+# Upgrade the system and install dependencies.
+RUN apk -U upgrade && \
+    apk add --update --no-cache nodejs npm make g++ py3-pip
+
+# Set deployment directory.
+WORKDIR $SOURCE_DIR
+
+# Copy in files from outside of docker.
+COPY ./pom.xml ./pom.xml
+COPY ./assembly.xml ./assembly.xml
+COPY ./.wvr/build-config.js ./.wvr/build-config.js
+COPY ./src ./src
+COPY ./build ./build
+COPY ./package.json ./package.json
+
+# Change ownership of source directory.
+RUN chown -R $USER_ID:$USER_ID $SOURCE_DIR
+
+# Login as user.
+USER $USER_NAME
+
+# Build with production profile and skip tests.
+RUN mvn package -Pproduction -Dmaven.test.skip=true
+
+
+# JRE Stage.
+FROM eclipse-temurin:11-alpine
+ARG USER_ID
+ARG USER_NAME
+ARG HOME_DIR
+ARG SOURCE_DIR
+ARG APP_PATH
+ARG VERSION
+ARG VIREO_GIT_SHA_FULL
+ARG VIREO_GIT_SHA_SHORT
+ARG DEPLOYMENT_CONFIG_SHA_FULL
+ARG DEPLOYMENT_CONFIG_SHA_SHORT
+ARG BUILD_TIMESTAMP
+
+ENV APP_PATH=$APP_PATH
+
+# Add OCI-compliant image labels
+LABEL org.opencontainers.image.title="Vireo ETD Management System - JHU"
+LABEL org.opencontainers.image.description="JHU-specific Docker image for local testing and deployment"
+LABEL org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.created="${BUILD_TIMESTAMP}"
+LABEL org.opencontainers.image.revision="${VIREO_GIT_SHA_FULL}"
+LABEL org.opencontainers.image.source="https://github.com/jhu-sheridan-libraries/vireo"
+LABEL org.opencontainers.image.vendor="Johns Hopkins University"
+
+# Add JHU-specific labels
+LABEL edu.jhu.vireo.config-sha="${DEPLOYMENT_CONFIG_SHA_FULL}"
+LABEL edu.jhu.vireo.build-label="${VIREO_GIT_SHA_SHORT}-config-${DEPLOYMENT_CONFIG_SHA_SHORT}"
+
+# Create the group (use a high ID to attempt to avoid conflits).
+RUN addgroup -g $USER_ID $USER_NAME
+
+# Create the user (use a high ID to attempt to avoid conflits).
+RUN adduser -h $HOME_DIR -u $USER_ID -G $USER_NAME -D $USER_NAME
+
+# Ensure app path directory exists and has appropriate file permissions.
+RUN mkdir -p $APP_PATH && \
+    chown $USER_ID:$USER_ID $APP_PATH && \
+    chmod g+s $APP_PATH
+
+# Update the system and install gettext for envsubst and wget for health check.
+RUN apk -U upgrade && \
+    apk add --update --no-cache gettext wget
+
+# Copy files from outside docker to inside.
+COPY build/appConfig.js.template /usr/local/app/templates/appConfig.js.template
+COPY build/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+# Strip Windows CRLF line endings (builds may run on Windows hosts)
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh /usr/local/app/templates/appConfig.js.template && \
+    chmod ugo+x /usr/local/bin/docker-entrypoint.sh
+
+# Login as user.
+USER $USER_NAME
+
+# Set deployment directory.
+WORKDIR $HOME_DIR
+
+# Copy over the built artifact and library from the maven image.
+COPY --from=maven $SOURCE_DIR/target/vireo-*.war ./vireo.war
+COPY --from=maven $SOURCE_DIR/target/libs ./libs
+
+EXPOSE 9000
+
+# Add health check for AWS ECS/Fargate compatibility
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:9000/ || exit 1
+
+# Entrypoint performs environment substitution on appConfig.js.
+ENTRYPOINT ["docker-entrypoint.sh"]
+
+# Run java command with graceful shutdown support (30s stop timeout configured at runtime).
+CMD ["java", "-jar", "./vireo.war"]

@@ -102,8 +102,6 @@ dist/
 
 
 ### Project Specific ###
-.env*
-
 !**/src/main/**
 !**/src/test/**
 

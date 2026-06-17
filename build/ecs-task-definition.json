@@ -1,0 +1,113 @@
+{
+  "_comment": "ECS Task Definition Template for Vireo ETD Management System - JHU AWS Deployment",
+  "_usage": "Replace placeholder values (marked with <...>) before registering with ECS",
+  "_secrets_note": "Secrets can use either AWS Secrets Manager or Parameter Store ARNs. Secrets Manager format: arn:aws:secretsmanager:<region>:<account-id>:secret:<secret-name>. Parameter Store format: arn:aws:ssm:<region>:<account-id>:parameter/<parameter-path>",
+  "family": "vireo-jhu-vireo",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE",
+    "EC2"
+  ],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::<account-id>:role/<ecs-task-execution-role>",
+  "taskRoleArn": "arn:aws:iam::<account-id>:role/<ecs-task-role>",
+  "containerDefinitions": [
+    {
+      "name": "vireo",
+      "image": "ghcr.io/jhu-sheridan-libraries/vireo:jhu-vireo-<version>",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 9000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "APP_PATH",
+          "value": "/var/vireo"
+        },
+        {
+          "name": "AUTH_SERVICE_URL",
+          "value": "window.location.protocol + '//' + window.location.host + window.location.base"
+        },
+        {
+          "name": "LOCAL_AUTHENTICATION",
+          "value": "false"
+        },
+        {
+          "name": "STOMP_DEBUG",
+          "value": "false"
+        }
+      ],
+
+      "secrets": [
+        {
+          "_comment": "Database connection string - use Secrets Manager or Parameter Store",
+          "name": "SPRING_DATASOURCE_URL",
+          "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:vireo/datasource-url"
+        },
+        {
+          "_comment": "Database username",
+          "name": "SPRING_DATASOURCE_USERNAME",
+          "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:vireo/datasource-username"
+        },
+        {
+          "_comment": "Database password",
+          "name": "SPRING_DATASOURCE_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:vireo/datasource-password"
+        },
+        {
+          "_comment": "JWT signing secret for authentication tokens",
+          "name": "AUTH_SECURITY_JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:vireo/jwt-secret"
+        },
+        {
+          "_comment": "Application cryptographic operations secret",
+          "name": "APP_SECURITY_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:<region>:<account-id>:secret:vireo/app-secret"
+        }
+      ],
+      "mountPoints": [
+        {
+          "sourceVolume": "vireo-data",
+          "containerPath": "/var/vireo",
+          "readOnly": false
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/vireo-jhu-vireo",
+          "awslogs-region": "<region>",
+          "awslogs-stream-prefix": "vireo"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:9000/ || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 10,
+        "retries": 3,
+        "startPeriod": 60
+      },
+      "stopTimeout": 30
+    }
+  ],
+  "volumes": [
+    {
+      "name": "vireo-data",
+      "efsVolumeConfiguration": {
+        "fileSystemId": "<efs-filesystem-id>",
+        "transitEncryption": "ENABLED",
+        "authorizationConfig": {
+          "accessPointId": "<efs-access-point-id>",
+          "iam": "ENABLED"
+        }
+      }
+    }
+  ]
+}

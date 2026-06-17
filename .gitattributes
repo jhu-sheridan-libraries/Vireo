@@ -1,0 +1,2 @@
+# in case image is built on Windows to force Linux-style shell line-endings for shell scripts etc, docker-entrypoint.sh
+*.sh text eol=lf

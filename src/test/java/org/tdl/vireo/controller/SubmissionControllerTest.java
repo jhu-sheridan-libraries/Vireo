@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import javax.servlet.ServletOutputStream;
@@ -14,6 +16,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,7 +29,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.ActiveProfiles;
 import org.tdl.vireo.exception.BatchExportException;
+import org.tdl.vireo.mock.BatchTestGenerators;
 import org.tdl.vireo.model.Action;
+import org.tdl.vireo.model.batch.BatchDepositResult;
+import org.tdl.vireo.model.batch.DepositOutcome;
+import org.tdl.vireo.service.BatchDepositService;
 import org.tdl.vireo.model.ActionLog;
 import org.tdl.vireo.model.NamedSearchFilterGroup;
 import org.tdl.vireo.model.Role;
@@ -82,8 +89,14 @@ public class SubmissionControllerTest extends AbstractControllerTest {
     @Mock
     private ServletOutputStream outputStream;
 
+    @Mock
+    private BatchDepositService batchDepositService;
+
     @InjectMocks
     private SubmissionController submissionController;
+
+    private static final long BATCH_BASE_SEED = 20240612L;
+    private static final int BATCH_ITERATIONS = 100;
 
     @BeforeEach
     public void setup() {
@@ -110,6 +123,74 @@ public class SubmissionControllerTest extends AbstractControllerTest {
 
         assertEquals(ApiStatus.SUCCESS, response.getMeta().getStatus());
         assertEquals(pageable.getPageSize(), response.getPayload().size());
+    }
+
+    @Test
+    public void testBatchPublishPreconditionFailureReturnsError() {
+        when(batchDepositService.publish(TEST_USER_1, 7L)).thenReturn(BatchDepositResult.preconditionFailed("No deposit location"));
+
+        ApiResponse result = submissionController.batchPublish(TEST_USER_1, 7L);
+
+        assertEquals(ApiStatus.ERROR, result.getMeta().getStatus());
+        assertEquals("No deposit location", result.getMeta().getMessage());
+        verify(batchDepositService).publish(TEST_USER_1, 7L);
+    }
+
+    @Test
+    public void testBatchPublishEmptyBatchIsSuccessWithZeroCounts() {
+        when(batchDepositService.publish(TEST_USER_1, 7L)).thenReturn(new BatchDepositResult(new ArrayList<DepositOutcome>()));
+
+        ApiResponse result = submissionController.batchPublish(TEST_USER_1, 7L);
+
+        assertEquals(ApiStatus.SUCCESS, result.getMeta().getStatus());
+        Map<String, Object> counts = counts(result);
+        assertEquals(0, counts.get("deposited"));
+        assertEquals(0, counts.get("failed"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testBatchPublishResponseStatusFollowsFailureCount() {
+        // Feature: batch-deposit-summary-email, Property 12: Response status follows failure count
+        // Validates: Requirements 6.1, 6.2
+        BatchTestGenerators.runIterations(BATCH_BASE_SEED, BATCH_ITERATIONS, (gen, iteration) -> {
+            String ctx = " [seed=" + BATCH_BASE_SEED + ", iteration=" + iteration + "]";
+            int size = gen.sizeForIteration(iteration);
+            List<DepositOutcome> outcomes = gen.outcomes(size);
+            // Force the no-failure branch for a share of iterations so both branches are well covered.
+            if (iteration % 3 == 0) {
+                List<DepositOutcome> allDeposited = new ArrayList<>();
+                for (DepositOutcome o : outcomes) {
+                    allDeposited.add(DepositOutcome.deposited(o.getSubmissionId(), o.getTitle()));
+                }
+                outcomes = allDeposited;
+            }
+            BatchDepositResult batch = new BatchDepositResult(outcomes);
+            int d = batch.deposited();
+            int f = batch.failed();
+
+            when(batchDepositService.publish(TEST_USER_1, 9L)).thenReturn(batch);
+
+            ApiResponse result = submissionController.batchPublish(TEST_USER_1, 9L);
+            Map<String, Object> counts = counts(result);
+
+            if (f == 0) {
+                assertEquals(ApiStatus.SUCCESS, result.getMeta().getStatus(), "status for d=" + d + ", f=" + f + ctx);
+            } else {
+                assertEquals(ApiStatus.ERROR, result.getMeta().getStatus(), "status for d=" + d + ", f=" + f + ctx);
+                String message = result.getMeta().getMessage();
+                assertTrue(message != null && !message.isEmpty(), "message present" + ctx);
+                assertTrue(message.contains(String.valueOf(d)) && message.contains(String.valueOf(f)), "message has counts d=" + d + ", f=" + f + ": " + message + ctx);
+            }
+            assertEquals(d, counts.get("deposited"), "deposited count" + ctx);
+            assertEquals(f, counts.get("failed"), "failed count" + ctx);
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> counts(ApiResponse result) {
+        Object payload = result.getPayload().values().iterator().next();
+        return (Map<String, Object>) payload;
     }
 
     @Test

@@ -3,6 +3,8 @@ package org.tdl.vireo.utility;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +55,27 @@ public class TemplateUtility {
             content = content.replaceAll("\\{" + parameter[0] + "\\}", parameter[1]);
         }
         return content;
+    }
+
+    private static final Pattern LITERAL_PLACEHOLDER = Pattern.compile("\\{([A-Z_]+)\\}");
+
+    /**
+     * Substitute placeholders in a single pass, inserting values literally.
+     * Unknown placeholders are left untouched and inserted values are never rescanned.
+     */
+    public String templateLiteral(String content, Map<String, String> values) {
+        if (content == null) {
+            return null;
+        }
+        Matcher matcher = LITERAL_PLACEHOLDER.matcher(content);
+        StringBuffer result = new StringBuffer();
+        while (matcher.find()) {
+            String value = values == null ? null : values.get(matcher.group(1));
+            String replacement = value != null ? value : matcher.group();
+            matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(result);
+        return result.toString();
     }
 
     public String compileTemplate(EmailTemplate emailTemplate, Submission submission) {

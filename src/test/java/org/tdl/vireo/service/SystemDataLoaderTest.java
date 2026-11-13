@@ -190,7 +190,7 @@ public class SystemDataLoaderTest {
     }
 
     private void assertEmailTemplate(boolean isReload) {
-        assertEquals(19, emailTemplateRepo.count(),
+        assertEquals(20, emailTemplateRepo.count(),
             isReload
                 ? "Incorrect number of emailTemplate found after reload"
                 : "Incorrect number of emailTemplate found");

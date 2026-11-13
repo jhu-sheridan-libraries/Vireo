@@ -34,6 +34,17 @@ angular.module("mock.submissionRepo", []).service("SubmissionRepo", function($q)
         return payloadPromise($q.defer(), payload);
     };
 
+    // Resolves with an ERROR meta, as the server returns when some deposits fail.
+    repo.batchPublishError = function (message) {
+        return $q.resolve({
+            meta: {
+                status: "ERROR",
+                type: "ERROR",
+                message: message || "Batch publish failed"
+            }
+        });
+    };
+
     repo.batchUpdateStatus = function (submissionStatus) {
         var payload = {};
         return payloadPromise($q.defer(), payload);

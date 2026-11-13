@@ -1,4 +1,4 @@
-vireo.controller("SubmissionListController", function (NgTableParams, $controller, $filter, $location, $q, $scope, ControlledVocabularyRepo, CustomActionDefinitionRepo, DepositLocationRepo, DocumentTypeRepo, EmailRecipient, EmailRecipientType, EmailTemplateRepo, EmbargoRepo, FieldPredicateRepo, FieldValueRepo, ManagerFilterColumnRepo, ManagerSubmissionListColumnRepo, NamedSearchFilterGroup, OrganizationRepo, OrganizationCategoryRepo, PackagerRepo, SavedFilter, SavedFilterRepo, SidebarService, SubmissionListColumnRepo, SubmissionRepo, SubmissionStatusRepo, UserRepo, UserSettings, $window, WsApi) {
+vireo.controller("SubmissionListController", function (AlertService, NgTableParams, $controller, $filter, $location, $q, $scope, ControlledVocabularyRepo, CustomActionDefinitionRepo, DepositLocationRepo, DocumentTypeRepo, EmailRecipient, EmailRecipientType, EmailTemplateRepo, EmbargoRepo, FieldPredicateRepo, FieldValueRepo, ManagerFilterColumnRepo, ManagerSubmissionListColumnRepo, NamedSearchFilterGroup, OrganizationRepo, OrganizationCategoryRepo, PackagerRepo, SavedFilter, SavedFilterRepo, SidebarService, SubmissionListColumnRepo, SubmissionRepo, SubmissionStatusRepo, UserRepo, UserSettings, $window, WsApi) {
 
     angular.extend(this, $controller('AbstractController', {
         $scope: $scope
@@ -475,9 +475,26 @@ vireo.controller("SubmissionListController", function (NgTableParams, $controlle
             });
         };
 
+        var batchPublishChannel = 'submission-list/batch-publish';
+
         var batchPublish = function (newStatus) {
+            AlertService.removeAll(batchPublishChannel);
             $scope.advancedfeaturesBox.processing = true;
-            SubmissionRepo.batchPublish($scope.advancedfeaturesBox.depositLocation).then(function () {
+            SubmissionRepo.batchPublish($scope.advancedfeaturesBox.depositLocation).then(function (response) {
+                if (response && response.meta && response.meta.status === "ERROR") {
+                    AlertService.add(response.meta, batchPublishChannel);
+                }
+            }, function (response) {
+                if (response && response.meta && response.meta.status === "ERROR") {
+                    AlertService.add(response.meta, batchPublishChannel);
+                } else {
+                    AlertService.add({
+                        status: "ERROR",
+                        type: "ERROR",
+                        message: "The result of the batch publish is unknown. Check the summary email and the submission list before retrying."
+                    }, batchPublishChannel);
+                }
+            }).finally(function () {
                 resetBatchProcess();
                 query();
             });

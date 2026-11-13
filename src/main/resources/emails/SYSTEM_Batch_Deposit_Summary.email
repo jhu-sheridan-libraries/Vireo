@@ -1,0 +1,26 @@
+# Email sent to the reviewer who ran a Batch Publish, summarizing the outcome.
+#
+# Parameters:
+#   {DEPOSIT_LOCATION}: The name of the deposit location the batch was published to.
+#   {TOTAL_COUNT}: The number of submissions attempted.
+#   {DEPOSITED_COUNT}: The number of submissions successfully deposited.
+#   {FAILED_COUNT}: The number of submissions that failed to deposit.
+#   {FINISHED_AT}: The date, time, and time zone at which the batch finished.
+#   {DEPOSITED_LIST}: One line per deposited submission (id and title).
+#   {FAILED_LIST}: One line per failed submission (id, title, and reason).
+#
+Subject: Batch Publish Summary: {DEPOSITED_COUNT} deposited, {FAILED_COUNT} failed
+
+Batch publish to {DEPOSIT_LOCATION} finished at {FINISHED_AT}.
+
+Attempted: {TOTAL_COUNT}
+Deposited: {DEPOSITED_COUNT}
+Failed: {FAILED_COUNT}
+
+Failed deposits:
+{FAILED_LIST}
+
+Deposited submissions:
+{DEPOSITED_LIST}
+
+The Vireo Team

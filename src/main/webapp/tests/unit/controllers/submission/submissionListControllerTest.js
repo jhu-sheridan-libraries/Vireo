@@ -67,6 +67,7 @@ describe("controller: SubmissionListController", function () {
     beforeEach(function() {
         module("core");
         module("vireo");
+        module("mock.alertService");
         module("mock.controlledVocabulary");
         module("mock.controlledVocabularyRepo");
         module("mock.customActionDefinition");
@@ -704,6 +705,71 @@ describe("controller: SubmissionListController", function () {
             scope.$digest();
 
             expect(scope.advancedfeaturesBox.processing).toBe(false);
+        });
+        describe("batchPublish alerts", function () {
+            var AlertService, channel = "submission-list/batch-publish";
+
+            beforeEach(function () {
+                inject(function (_AlertService_) {
+                    AlertService = _AlertService_;
+                });
+                spyOn(AlertService, "add");
+                spyOn(AlertService, "removeAll");
+                scope.advancedfeaturesBox.depositLocation = { id: 1 };
+            });
+
+            it("should remove existing alerts before processing starts", function () {
+                var processingAtRemove;
+                AlertService.removeAll.and.callFake(function () {
+                    processingAtRemove = scope.advancedfeaturesBox.processing;
+                });
+                spyOn(SubmissionRepo, "batchPublish").and.returnValue(q.defer().promise);
+                scope.advancedfeaturesBox.processing = false;
+
+                scope.advancedfeaturesBox.batchPublish();
+
+                expect(AlertService.removeAll).toHaveBeenCalledWith(channel);
+                expect(processingAtRemove).toBe(false);
+                expect(scope.advancedfeaturesBox.processing).toBe(true);
+            });
+            it("should add the message alert, clear processing, and re-query on an ERROR response", function () {
+                var meta = { status: "ERROR", type: "ERROR", message: "2 of 3 failed" };
+                spyOn(SubmissionRepo, "batchPublish").and.returnValue(SubmissionRepo.batchPublishError(meta.message));
+                var tableParams = scope.tableParams;
+
+                scope.advancedfeaturesBox.batchPublish();
+                scope.$digest();
+
+                expect(AlertService.add).toHaveBeenCalledWith(meta, channel);
+                expect(scope.advancedfeaturesBox.processing).toBe(false);
+                expect(scope.tableParams).not.toBe(tableParams);
+            });
+            it("should add no alert, clear processing, and re-query on a SUCCESS response", function () {
+                spyOn(SubmissionRepo, "batchPublish").and.returnValue(q.resolve({ meta: { status: "SUCCESS" } }));
+                var tableParams = scope.tableParams;
+
+                scope.advancedfeaturesBox.batchPublish();
+                scope.$digest();
+
+                expect(AlertService.add).not.toHaveBeenCalled();
+                expect(scope.advancedfeaturesBox.processing).toBe(false);
+                expect(scope.tableParams).not.toBe(tableParams);
+            });
+            it("should add the outcome unknown alert, clear processing, and re-query on rejection without meta", function () {
+                spyOn(SubmissionRepo, "batchPublish").and.returnValue(q.reject({}));
+                var tableParams = scope.tableParams;
+
+                scope.advancedfeaturesBox.batchPublish();
+                scope.$digest();
+
+                expect(AlertService.add).toHaveBeenCalledTimes(1);
+                var added = AlertService.add.calls.mostRecent().args;
+                expect(added[0].status).toBe("ERROR");
+                expect(added[0].message).toContain("unknown");
+                expect(added[1]).toBe(channel);
+                expect(scope.advancedfeaturesBox.processing).toBe(false);
+                expect(scope.tableParams).not.toBe(tableParams);
+            });
         });
         it("batchUpdateStatus should update the batch", function () {
             scope.advancedfeaturesBox.processing = null;

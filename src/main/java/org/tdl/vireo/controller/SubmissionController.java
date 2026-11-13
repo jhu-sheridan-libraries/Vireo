@@ -65,7 +65,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.tdl.vireo.ApplicationConstants;
 import org.tdl.vireo.exception.BatchExportException;
-import org.tdl.vireo.exception.DepositException;
 import org.tdl.vireo.exception.OrganizationDoesNotAcceptSubmissionsException;
 import org.tdl.vireo.model.Action;
 import org.tdl.vireo.model.ActionLog;
@@ -82,6 +81,7 @@ import org.tdl.vireo.model.SubmissionListColumn;
 import org.tdl.vireo.model.SubmissionStatus;
 import org.tdl.vireo.model.User;
 import org.tdl.vireo.model.VocabularyWord;
+import org.tdl.vireo.model.batch.BatchDepositResult;
 import org.tdl.vireo.model.depositor.Depositor;
 import org.tdl.vireo.model.export.ExportPackage;
 import org.tdl.vireo.model.packager.AbstractPackager;
@@ -101,6 +101,7 @@ import org.tdl.vireo.model.repo.UserRepo;
 import org.tdl.vireo.model.response.Views;
 import org.tdl.vireo.model.validation.FieldValueValidator;
 import org.tdl.vireo.service.AssetService;
+import org.tdl.vireo.service.BatchDepositService;
 import org.tdl.vireo.service.DepositorService;
 import org.tdl.vireo.service.SubmissionEmailService;
 import org.tdl.vireo.utility.OrcidUtility;
@@ -171,6 +172,9 @@ public class SubmissionController {
 
     @Autowired
     private DepositorService depositorService;
+
+    @Autowired
+    private BatchDepositService batchDepositService;
 
     @Autowired
     private PackagerUtility packagerUtility;
@@ -880,34 +884,24 @@ public class SubmissionController {
     @RequestMapping("/batch-publish/{depositLocationId}")
     @PreAuthorize("hasRole('REVIEWER')")
     public ApiResponse batchPublish(@WeaverUser User user, @PathVariable Long depositLocationId) {
-        ApiResponse response = new ApiResponse(SUCCESS);
-        SubmissionStatus submissionStatus = submissionStatusRepo.findByName("Published");
-        if (submissionStatus != null) {
-            DepositLocation depositLocation = depositLocationRepo.findById(depositLocationId).get();
-            if (depositLocation != null) {
-                Depositor depositor = depositorService.getDepositor(depositLocation.getDepositorName());
-                if (depositor != null) {
-                    for (Submission submission : submissionRepo.batchDynamicSubmissionQuery(user.getActiveFilter(), user.getSubmissionViewColumns())) {
-                        try {
-                            ExportPackage exportPackage = packagerUtility.packageExport(depositLocation.getPackager(), submission);
-                            String depositURL = depositor.deposit(depositLocation, exportPackage);
-                            submission.setDepositURL(depositURL);
-                            submission = submissionRepo.updateStatus(submission, submissionStatus, user);
-                            submissionEmailService.sendWorkflowEmails(user, submission.getId());
-                        } catch (Exception e) {
-                            throw new DepositException("Failed package export on submission " + submission.getId());
-                        }
-                    }
-                } else {
-                    response = new ApiResponse(ERROR, "Could not find a depositor name " + depositLocation.getDepositorName());
-                }
-            } else {
-                response = new ApiResponse(ERROR, "Could not find a deposite location id " + depositLocationId);
-            }
-        } else {
-            response = new ApiResponse(ERROR, "Could not find a submission status name Published");
+        BatchDepositResult result = batchDepositService.publish(user, depositLocationId);
+
+        if (result.getPreconditionError() != null) {
+            return new ApiResponse(ERROR, result.getPreconditionError());
         }
-        return response;
+
+        int deposited = result.deposited();
+        int failed = result.failed();
+
+        Map<String, Object> counts = new HashMap<String, Object>();
+        counts.put("deposited", deposited);
+        counts.put("failed", failed);
+
+        if (failed == 0) {
+            return new ApiResponse(SUCCESS, counts);
+        }
+
+        return new ApiResponse(ERROR, "Batch publish finished: " + deposited + " deposited, " + failed + " failed. See the summary email for details.", counts);
     }
 
     @RequestMapping(value = "/{submissionId}/submit-date", method = RequestMethod.POST)

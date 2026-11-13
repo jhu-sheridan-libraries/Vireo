@@ -11,7 +11,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
@@ -33,6 +36,7 @@ import org.tdl.vireo.model.repo.EmailTemplateRepo;
 @SpringBootTest(classes = { Application.class })
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @DirtiesContext(classMode = ClassMode.AFTER_CLASS)
+@TestInstance(Lifecycle.PER_CLASS)
 public class BatchDepositSummaryTemplateTest {
 
     private static final String TEMPLATE_NAME = "SYSTEM Batch Deposit Summary";
@@ -48,6 +52,17 @@ public class BatchDepositSummaryTemplateTest {
 
     @Autowired
     private EmailTemplateRepo emailTemplateRepo;
+
+    /**
+     * Runs the first load once for the whole class. It runs outside the per-test transaction, so it
+     * is committed and every test starts from the loaded state. The @DirtiesContext on this class
+     * discards that state when the class finishes. Each test then only performs the loads it is
+     * actually about (the second run).
+     */
+    @BeforeAll
+    public void loadSystemDataOnce() throws Exception {
+        systemDataLoader.loadSystemData();
+    }
 
     private String readResource() throws Exception {
         try (InputStream in = getClass().getResourceAsStream(RESOURCE_PATH)) {
@@ -84,8 +99,7 @@ public class BatchDepositSummaryTemplateTest {
 
     @Test
     public void testLoaderInstallsTemplateAsSystemRequired() throws Exception {
-        systemDataLoader.loadSystemData();
-
+        // The load itself happened once in loadSystemDataOnce().
         EmailTemplate template = emailTemplateRepo.findByNameAndSystemRequired(TEMPLATE_NAME, true);
 
         assertNotNull(template, "Loader must install " + TEMPLATE_NAME);
@@ -97,7 +111,7 @@ public class BatchDepositSummaryTemplateTest {
 
     @Test
     public void testSecondRunCreatesNoDuplicate() throws Exception {
-        systemDataLoader.loadSystemData();
+        // The first run was loadSystemDataOnce(); the load below is the second run.
         long totalAfterFirst = emailTemplateRepo.count();
         String subject = emailTemplateRepo.findByNameAndSystemRequired(TEMPLATE_NAME, true).getSubject();
         String message = emailTemplateRepo.findByNameAndSystemRequired(TEMPLATE_NAME, true).getMessage();
@@ -113,7 +127,7 @@ public class BatchDepositSummaryTemplateTest {
 
     @Test
     public void testSecondRunLeavesEditedTemplateUnchanged() throws Exception {
-        systemDataLoader.loadSystemData();
+        // The first run was loadSystemDataOnce(); the load below is the second run.
 
         // An administrator edit is stored as a custom (non system required) copy.
         EmailTemplate custom = emailTemplateRepo.create(TEMPLATE_NAME, "Edited subject", "Edited message");

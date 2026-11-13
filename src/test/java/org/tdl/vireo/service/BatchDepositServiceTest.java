@@ -27,7 +27,9 @@ import java.util.stream.Collectors;
 
 import javax.mail.MessagingException;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -87,6 +89,19 @@ public class BatchDepositServiceTest {
 
     private ListAppender<ILoggingEvent> appender;
     private Logger serviceLogger;
+
+    /** The level the logger had before this class raised it to ALL, restored so other test classes keep the configured level. */
+    private static Level originalServiceLoggerLevel;
+
+    @BeforeAll
+    public static void rememberServiceLoggerLevel() {
+        originalServiceLoggerLevel = ((Logger) LoggerFactory.getLogger(BatchDepositService.class)).getLevel();
+    }
+
+    @AfterAll
+    public static void restoreServiceLoggerLevel() {
+        ((Logger) LoggerFactory.getLogger(BatchDepositService.class)).setLevel(originalServiceLoggerLevel);
+    }
 
     /** Index of each export package, so the depositor can fail by submission position. */
     private final Map<ExportPackage, Integer> indexByPackage = new IdentityHashMap<>();

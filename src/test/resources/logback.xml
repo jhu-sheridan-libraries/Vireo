@@ -6,6 +6,8 @@
   <logger name="org.hibernate" level="OFF"/>
   <logger name="org.springframework" level="ERROR"/>
   <logger name="org.tdl.vireo" level="ERROR"/>
+  <!-- The batch deposit property tests fail submissions on purpose; logging every stack trace dominates their runtime. -->
+  <logger name="org.tdl.vireo.service.BatchDepositService" level="OFF"/>
   <logger name="edu.tamu" level="ERROR"/>
   <logger name="ro.isdc.wro" level="ERROR"/>
   <property name="root.level.console" value="OFF" />

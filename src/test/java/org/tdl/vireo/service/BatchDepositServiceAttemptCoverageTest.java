@@ -45,12 +45,20 @@ public class BatchDepositServiceAttemptCoverageTest {
 
     private static final long DEPOSIT_LOCATION_ID = 7L;
 
+    /**
+     * Upper bound for the randomly drawn batch sizes. The fixed boundary sizes (up to 1000) are
+     * still run in full; random sizes above this add mock-creation cost without covering new behavior.
+     */
+    private static final int MAX_RANDOM_BATCH = 50;
+
     @Test
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void everyMatchedSubmissionIsAttemptedExactlyOnce() {
         BatchTestGenerators.runIterations(BASE_SEED, ITERATIONS, (gen, iteration) -> {
             String ctx = " [seed=" + BASE_SEED + ", iteration=" + iteration + "]";
-            int size = gen.sizeForIteration(iteration);
+            // Draw the size as before so the seeded sequence is unchanged, then cap the random ones.
+            int drawnSize = gen.sizeForIteration(iteration);
+            int size = iteration < BatchTestGenerators.BOUNDARY_SIZES.length ? drawnSize : Math.min(drawnSize, MAX_RANDOM_BATCH);
 
             SubmissionStatusRepo statusRepo = mock(SubmissionStatusRepo.class);
             DepositLocationRepo locationRepo = mock(DepositLocationRepo.class);

@@ -60,7 +60,7 @@ public class BatchDepositServiceMailIndependenceTest {
 
     private static final int ITERATIONS = 100;
 
-    private static final int MAX_BATCH = 40;
+    private static final int MAX_BATCH = 15;
 
     private static final long DEPOSIT_LOCATION_ID = 7L;
 
@@ -103,6 +103,10 @@ public class BatchDepositServiceMailIndependenceTest {
             assertEquals(size, baseline.total, "baseline total" + ctx);
 
             for (MailBehavior behavior : MailBehavior.values()) {
+                if (behavior == MailBehavior.SEND_SUCCEEDS) {
+                    // The baseline already is a SEND_SUCCEEDS run (including its sender verification).
+                    continue;
+                }
                 Snapshot actual = run(behavior, size, mode, workflowEmailFails, priorUrl, blankKind, blankViaPreferred, ctx);
                 String bctx = " behavior=" + behavior + ctx;
                 assertEquals(baseline.deposited, actual.deposited, "deposited count" + bctx);

@@ -103,7 +103,7 @@ public class BatchDepositService {
     }
 
     private DepositOutcome attempt(User user, DepositLocation depositLocation, Depositor depositor, SubmissionStatus publishedStatus, Submission submission) {
-        String title = new SubmissionHelperUtility(submission).getTitle();
+        String title = titleOf(submission);
         String previousDepositURL = submission.getDepositURL();
         boolean depositURLChanged = false;
 
@@ -130,6 +130,20 @@ public class BatchDepositService {
         }
 
         return DepositOutcome.deposited(submission.getId(), title);
+    }
+
+    /**
+     * Reads the title for reporting only. A title that cannot be read (for example a
+     * stored null value) must not stop the submission from being attempted or the batch
+     * from finishing, so it is reported as absent.
+     */
+    private String titleOf(Submission submission) {
+        try {
+            return new SubmissionHelperUtility(submission).getTitle();
+        } catch (RuntimeException e) {
+            LOG.warn("Batch publish could not read the title of submission {}; it will be reported without a title.", submission.getId(), e);
+            return null;
+        }
     }
 
 }

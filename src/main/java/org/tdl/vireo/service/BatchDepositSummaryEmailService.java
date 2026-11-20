@@ -9,7 +9,6 @@ import javax.mail.MessagingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.MailException;
 import org.springframework.stereotype.Service;
 import org.tdl.vireo.model.DepositLocation;
 import org.tdl.vireo.model.EmailTemplate;
@@ -98,9 +97,8 @@ public class BatchDepositSummaryEmailService {
             String message = templateUtility.templateLiteral(template.getMessage(), values);
 
             emailSender.sendEmail(address, subject, message);
-        } catch (MessagingException | MailException e) {
-            logSendFailure(reviewer, deposited, failed, notRecorded, e);
-        } catch (RuntimeException e) {
+        } catch (MessagingException | RuntimeException e) {
+            // RuntimeException includes Spring's MailException (org.springframework.mail).
             logSendFailure(reviewer, deposited, failed, notRecorded, e);
         }
     }

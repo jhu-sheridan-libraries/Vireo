@@ -707,7 +707,8 @@ describe("controller: SubmissionListController", function () {
             expect(scope.advancedfeaturesBox.processing).toBe(false);
         });
         describe("batchPublish alerts", function () {
-            var AlertService, channel = "submission-list/batch-publish";
+            // The controller channel of RestApi's 'submission/batch-publish/<id>' alerts.
+            var AlertService, channel = "submission/batch-publish";
 
             beforeEach(function () {
                 inject(function (_AlertService_) {
@@ -732,43 +733,56 @@ describe("controller: SubmissionListController", function () {
                 expect(processingAtRemove).toBe(false);
                 expect(scope.advancedfeaturesBox.processing).toBe(true);
             });
-            it("should add the message alert, clear processing, and re-query on an ERROR response", function () {
-                var meta = { status: "ERROR", type: "ERROR", message: "2 of 3 failed" };
-                spyOn(SubmissionRepo, "batchPublish").and.returnValue(SubmissionRepo.batchPublishError(meta.message));
-                var tableParams = scope.tableParams;
-
-                scope.advancedfeaturesBox.batchPublish();
-                scope.$digest();
-
-                expect(AlertService.add).toHaveBeenCalledWith(meta, channel);
-                expect(scope.advancedfeaturesBox.processing).toBe(false);
-                expect(scope.tableParams).not.toBe(tableParams);
-            });
-            it("should add no alert, clear processing, and re-query on a SUCCESS response", function () {
-                spyOn(SubmissionRepo, "batchPublish").and.returnValue(q.resolve({ meta: { status: "SUCCESS" } }));
-                var tableParams = scope.tableParams;
-
-                scope.advancedfeaturesBox.batchPublish();
-                scope.$digest();
-
-                expect(AlertService.add).not.toHaveBeenCalled();
-                expect(scope.advancedfeaturesBox.processing).toBe(false);
-                expect(scope.tableParams).not.toBe(tableParams);
-            });
-            it("should add the outcome unknown alert, clear processing, and re-query on rejection without meta", function () {
-                spyOn(SubmissionRepo, "batchPublish").and.returnValue(q.reject({}));
-                var tableParams = scope.tableParams;
-
-                scope.advancedfeaturesBox.batchPublish();
-                scope.$digest();
-
+            var expectOutcomeUnknownAlert = function () {
                 expect(AlertService.add).toHaveBeenCalledTimes(1);
                 var added = AlertService.add.calls.mostRecent().args;
                 expect(added[0].status).toBe("ERROR");
+                expect(added[0].type).toBe("ERROR");
                 expect(added[0].message).toContain("unknown");
+                expect(added[0].message).toContain("before retrying");
                 expect(added[1]).toBe(channel);
+            };
+
+            var runBatchPublish = function (promise) {
+                spyOn(SubmissionRepo, "batchPublish").and.returnValue(promise);
+                var tableParams = scope.tableParams;
+
+                scope.advancedfeaturesBox.batchPublish();
+                scope.$digest();
+
                 expect(scope.advancedfeaturesBox.processing).toBe(false);
                 expect(scope.tableParams).not.toBe(tableParams);
+            };
+
+            it("should add no alert of its own on an ERROR response with a message, because RestApi already shows it", function () {
+                runBatchPublish(SubmissionRepo.batchPublishError("Batch publish finished: 1 deposited, 2 failed."));
+
+                expect(AlertService.add).not.toHaveBeenCalled();
+            });
+            it("should add no alert on a SUCCESS response", function () {
+                runBatchPublish(SubmissionRepo.batchPublish({ id: 1 }));
+
+                expect(AlertService.add).not.toHaveBeenCalled();
+            });
+            it("should add the outcome unknown alert on an HTTP error response without a message", function () {
+                runBatchPublish(SubmissionRepo.batchPublishTransportError());
+
+                expectOutcomeUnknownAlert();
+            });
+            it("should add the outcome unknown alert when the response body cannot be read", function () {
+                runBatchPublish(q.resolve({ body: "not json" }));
+
+                expectOutcomeUnknownAlert();
+            });
+            it("should add the outcome unknown alert when the response has no body", function () {
+                runBatchPublish(q.resolve({}));
+
+                expectOutcomeUnknownAlert();
+            });
+            it("should add the outcome unknown alert on rejection", function () {
+                runBatchPublish(q.reject({}));
+
+                expectOutcomeUnknownAlert();
             });
         });
         it("batchUpdateStatus should update the batch", function () {

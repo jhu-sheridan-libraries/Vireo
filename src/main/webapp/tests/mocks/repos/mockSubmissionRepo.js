@@ -29,19 +29,31 @@ angular.module("mock.submissionRepo", []).service("SubmissionRepo", function($q)
         return payloadPromise($q.defer(), payload);
     };
 
+    // WsApi.fetch resolves REST calls as { body: <JSON string> }; these mocks use that shape.
     repo.batchPublish = function (depositLocation) {
-        var payload = {};
-        return payloadPromise($q.defer(), payload);
+        return $q.resolve({
+            body: angular.toJson({ meta: { status: "SUCCESS" }, payload: {} })
+        });
     };
 
-    // Resolves with an ERROR meta, as the server returns when some deposits fail.
+    // The server's ERROR response when some deposits fail.
     repo.batchPublishError = function (message) {
         return $q.resolve({
-            meta: {
-                status: "ERROR",
-                type: "ERROR",
-                message: message || "Batch publish failed"
-            }
+            body: angular.toJson({
+                meta: {
+                    status: "ERROR",
+                    type: "ERROR",
+                    message: message || "Batch publish failed"
+                },
+                payload: {}
+            })
+        });
+    };
+
+    // RestApi.handleError's result for an HTTP error (for example a gateway timeout): no message.
+    repo.batchPublishTransportError = function () {
+        return $q.resolve({
+            body: angular.toJson({ meta: { status: "ERROR" }, payload: {} })
         });
     };
 

@@ -475,25 +475,41 @@ vireo.controller("SubmissionListController", function (AlertService, NgTablePara
             });
         };
 
-        var batchPublishChannel = 'submission-list/batch-publish';
+        // RestApi adds an alert for every response, and AlertService.addAlertServiceError adds one for
+        // every HTTP error, on 'submission/batch-publish/<id>'. The exclusive alerts element on the
+        // list page claims this controller channel, so those alerts appear there, once.
+        var batchPublishChannel = 'submission/batch-publish';
+
+        var addBatchPublishOutcomeUnknown = function () {
+            AlertService.add({
+                status: "ERROR",
+                type: "ERROR",
+                message: "The result of the batch publish is unknown. Check the summary email and the submission list before retrying."
+            }, batchPublishChannel);
+        };
 
         var batchPublish = function (newStatus) {
             AlertService.removeAll(batchPublishChannel);
             $scope.advancedfeaturesBox.processing = true;
             SubmissionRepo.batchPublish($scope.advancedfeaturesBox.depositLocation).then(function (response) {
-                if (response && response.meta && response.meta.status === "ERROR") {
-                    AlertService.add(response.meta, batchPublishChannel);
+                // WsApi.fetch resolves REST calls as { body: <JSON string> }, including HTTP errors.
+                var apiResponse;
+                try {
+                    apiResponse = angular.fromJson(response.body);
+                } catch (e) {
+                    apiResponse = undefined;
                 }
-            }, function (response) {
-                if (response && response.meta && response.meta.status === "ERROR") {
-                    AlertService.add(response.meta, batchPublishChannel);
-                } else {
-                    AlertService.add({
-                        status: "ERROR",
-                        type: "ERROR",
-                        message: "The result of the batch publish is unknown. Check the summary email and the submission list before retrying."
-                    }, batchPublishChannel);
+                var meta = apiResponse && apiResponse.meta;
+                if (!meta) {
+                    addBatchPublishOutcomeUnknown();
+                } else if (meta.status === "ERROR" && !meta.message) {
+                    // An HTTP error (for example a timeout): the batch may have run on the server.
+                    addBatchPublishOutcomeUnknown();
                 }
+                // An ERROR with a message is the server's own result, already shown by RestApi.
+            }, function () {
+                // The current WsApi never rejects; kept so a future change cannot hide the outcome.
+                addBatchPublishOutcomeUnknown();
             }).finally(function () {
                 resetBatchProcess();
                 query();

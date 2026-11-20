@@ -32,6 +32,8 @@ import org.springframework.mail.MailSendException;
 import org.tdl.vireo.model.DepositLocation;
 import org.tdl.vireo.model.EmailTemplate;
 import org.tdl.vireo.model.User;
+import org.tdl.vireo.model.batch.BatchDepositSummaryBuilder;
+import org.tdl.vireo.model.batch.BatchStop;
 import org.tdl.vireo.model.batch.DepositOutcome;
 import org.tdl.vireo.model.repo.EmailTemplateRepo;
 import org.tdl.vireo.utility.TemplateUtility;
@@ -257,6 +259,21 @@ public class BatchDepositSummaryEmailServiceTest {
         assertEquals(1, warns.size());
         assertTrue(warns.get(0).getFormattedMessage().contains("{NOT_RECORDED_LIST}"), warns.get(0).getFormattedMessage());
         assertTrue(warns.get(0).getFormattedMessage().contains(TEMPLATE_NAME), warns.get(0).getFormattedMessage());
+    }
+
+    @Test
+    public void testStoppedRunPutsNoteFirstInFailedList() throws Exception {
+        doReturn(template("s", "{NOT_RECORDED_LIST}\nF:\n{FAILED_LIST}")).when(emailTemplateRepo).findByNameAndSystemRequired(TEMPLATE_NAME, false);
+        List<DepositOutcome> stopped = Arrays.asList(
+            DepositOutcome.failed(1, "One", "Java heap space", new OutOfMemoryError("Java heap space")),
+            DepositOutcome.failed(2, "Two", BatchDepositSummaryBuilder.notAttemptedReason(1), null));
+
+        service.send(reviewer("rita@example.org", null), location("Repo"), stopped, finishedAt, new BatchStop(1, 1));
+
+        ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);
+        verify(emailSender).sendEmail(anyString(), anyString(), body.capture());
+        assertTrue(body.getValue().contains("F:\nThe batch stopped early after an internal error on submission #1. 1 submission was not attempted"), body.getValue());
+        assertTrue(body.getValue().contains("- #2 Two: Not attempted: the batch stopped after an internal error on submission #1"), body.getValue());
     }
 
     @Test

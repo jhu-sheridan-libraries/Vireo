@@ -13,6 +13,8 @@ import org.tdl.vireo.model.Submission;
 import org.tdl.vireo.model.SubmissionStatus;
 import org.tdl.vireo.model.User;
 import org.tdl.vireo.model.batch.BatchDepositResult;
+import org.tdl.vireo.model.batch.BatchDepositSummaryBuilder;
+import org.tdl.vireo.model.batch.BatchStop;
 import org.tdl.vireo.model.batch.DepositOutcome;
 import org.tdl.vireo.model.batch.FailureReason;
 import org.tdl.vireo.model.depositor.Depositor;
@@ -31,6 +33,10 @@ import org.tdl.vireo.utility.SubmissionHelperUtility;
  * single bad submission never blocks the rest of the batch. After the loop a
  * single summary email is sent to the reviewer who started the run. The summary
  * email is best effort and never changes the result of the run.
+ *
+ * An {@link Error} (for example OutOfMemoryError) is the exception: the submission
+ * being attempted is recorded as usual, the remaining submissions are reported as
+ * not attempted, the summary is sent, and the Error is rethrown.
  */
 @Service
 public class BatchDepositService {
@@ -92,19 +98,68 @@ public class BatchDepositService {
             submissionRepo.batchDynamicSubmissionQuery(user.getActiveFilter(), user.getSubmissionViewColumns()));
 
         List<DepositOutcome> outcomes = new ArrayList<DepositOutcome>(submissions.size());
-        for (Submission submission : submissions) {
-            outcomes.add(attempt(user, depositLocation, depositor, publishedStatus, submission));
+        Error stopError = null;
+        BatchStop stop = null;
+        for (int i = 0; i < submissions.size(); i++) {
+            Attempt attempt = attempt(user, depositLocation, depositor, publishedStatus, submissions.get(i));
+            outcomes.add(attempt.outcome);
+            if (attempt.error != null) {
+                // The JVM may be in a bad state (for example out of memory), so do not attempt
+                // anything else. Report the rest as not attempted; they are safe to retry.
+                stopError = attempt.error;
+                long stoppedOn = attempt.outcome.getSubmissionId();
+                List<Submission> rest = submissions.subList(i + 1, submissions.size());
+                String reason = BatchDepositSummaryBuilder.notAttemptedReason(stoppedOn);
+                for (Submission notAttempted : rest) {
+                    outcomes.add(DepositOutcome.failed(notAttempted.getId(), titleAfterStop(notAttempted), reason, null));
+                }
+                stop = new BatchStop(stoppedOn, rest.size());
+                LOG.error("Batch publish stopped after an internal error on submission {} (outcome: {}). {} submissions were not attempted.",
+                    stoppedOn, attempt.outcome.getStatus(), rest.size(), stopError);
+                break;
+            }
         }
 
         ZonedDateTime finishedAt = ZonedDateTime.now();
-        batchDepositSummaryEmailService.send(user, depositLocation, outcomes, finishedAt);
 
-        return new BatchDepositResult(outcomes);
+        if (stopError == null) {
+            batchDepositSummaryEmailService.send(user, depositLocation, outcomes, finishedAt);
+            return new BatchDepositResult(outcomes);
+        }
+
+        // Send what is known, then rethrow so the container sees the Error. A second Error
+        // while sending must not replace the original.
+        try {
+            batchDepositSummaryEmailService.send(user, depositLocation, outcomes, finishedAt, stop);
+        } catch (Throwable sendError) {
+            stopError.addSuppressed(sendError);
+        }
+        throw stopError;
     }
 
-    private DepositOutcome attempt(User user, DepositLocation depositLocation, Depositor depositor, SubmissionStatus publishedStatus, Submission submission) {
-        String title = titleOf(submission);
+    /** One submission's outcome, plus the Error that must stop the batch, if any. */
+    private static final class Attempt {
+
+        private final DepositOutcome outcome;
+
+        private final Error error;
+
+        private Attempt(DepositOutcome outcome, Error error) {
+            this.outcome = outcome;
+            this.error = error;
+        }
+
+    }
+
+    private Attempt attempt(User user, DepositLocation depositLocation, Depositor depositor, SubmissionStatus publishedStatus, Submission submission) {
         long submissionId = submission.getId();
+        String title;
+        try {
+            title = titleOf(submission);
+        } catch (Error e) {
+            // Nothing was packaged or deposited yet.
+            return new Attempt(DepositOutcome.failed(submissionId, null, FailureReason.of(e), e), e);
+        }
         String depositURL = null;
         boolean depositedRemotely = false;
 
@@ -115,26 +170,47 @@ public class BatchDepositService {
             depositedRemotely = true;
             submission.setDepositURL(depositURL);
             submission = submissionRepo.updateStatus(submission, publishedStatus, user);
-        } catch (Exception e) {
+        } catch (Throwable t) {
+            // An Error is classified like an exception, then stops the batch; publish() logs it.
+            Error error = t instanceof Error ? (Error) t : null;
             if (depositedRemotely) {
                 // updateStatus is not atomic: it may have failed before or after saving the
                 // submission. Either way the reviewer must check the record by hand, not retry.
                 // Workflow emails are skipped because the Published status may not be saved.
-                LOG.error("Batch publish deposited submission {} to {} but could not record it in Vireo. Do not retry; check the record by hand.", submissionId, depositURL, e);
-                return DepositOutcome.notRecorded(submissionId, title, depositURL, FailureReason.of(e), e);
+                if (error == null) {
+                    LOG.error("Batch publish deposited submission {} to {} but could not record it in Vireo. Do not retry; check the record by hand.", submissionId, depositURL, t);
+                }
+                return new Attempt(DepositOutcome.notRecorded(submissionId, title, depositURL, FailureReason.of(t), t), error);
             }
-            LOG.error("Batch publish failed to deposit submission {}.", submissionId, e);
-            return DepositOutcome.failed(submissionId, title, FailureReason.of(e), e);
+            if (error == null) {
+                LOG.error("Batch publish failed to deposit submission {}.", submissionId, t);
+            }
+            return new Attempt(DepositOutcome.failed(submissionId, title, FailureReason.of(t), t), error);
         }
 
         // Workflow emails are best effort; a failure here must not change the Deposited outcome.
+        DepositOutcome deposited = DepositOutcome.deposited(submissionId, title);
         try {
-            submissionEmailService.sendWorkflowEmails(user, submission.getId());
+            submissionEmailService.sendWorkflowEmails(user, submissionId);
         } catch (Exception e) {
-            LOG.error("Batch publish deposited submission {} but failed to send its workflow emails.", submission.getId(), e);
+            LOG.error("Batch publish deposited submission {} but failed to send its workflow emails.", submissionId, e);
+        } catch (Error e) {
+            return new Attempt(deposited, e);
         }
 
-        return DepositOutcome.deposited(submission.getId(), title);
+        return new Attempt(deposited, null);
+    }
+
+    /**
+     * Reads a title for a submission the run did not reach. The run is already stopping
+     * because of an Error, so nothing thrown here may replace that Error.
+     */
+    private String titleAfterStop(Submission submission) {
+        try {
+            return titleOf(submission);
+        } catch (Throwable t) {
+            return null;
+        }
     }
 
     /**

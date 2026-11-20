@@ -41,6 +41,15 @@ public final class BatchDepositSummaryBuilder {
      *                       and counted in FAILED_COUNT, so they still reach the reviewer.
      */
     public SummaryContent build(String depositLocationName, List<DepositOutcome> outcomes, ZonedDateTime finishedAt, boolean legacyTemplate) {
+        return build(depositLocationName, outcomes, finishedAt, legacyTemplate, null);
+    }
+
+    /**
+     * @param stop when not null, the run stopped early. A note saying so is put first in
+     *             FAILED_LIST. It is not an entry: it is not counted and not subject to
+     *             {@link #MAX_ENTRIES}, so it shows even when the failed list is truncated.
+     */
+    public SummaryContent build(String depositLocationName, List<DepositOutcome> outcomes, ZonedDateTime finishedAt, boolean legacyTemplate, BatchStop stop) {
         List<DepositOutcome> all = outcomes == null ? new ArrayList<>() : outcomes;
 
         List<String> depositedLines = new ArrayList<>();
@@ -82,9 +91,30 @@ public final class BatchDepositSummaryBuilder {
         parameters.put("FINISHED_AT", finishedAt.format(FINISHED_AT_FORMAT));
         parameters.put("NOT_RECORDED_LIST", listText(notRecordedLines, notRecorded, NO_NOT_RECORDED));
         parameters.put("DEPOSITED_LIST", listText(depositedLines, deposited, NO_DEPOSITS));
-        parameters.put("FAILED_LIST", listText(failedLines, failedShown, NO_FAILURES));
+        String failedList = listText(failedLines, failedShown, NO_FAILURES);
+        if (stop != null) {
+            failedList = stoppedNote(stop) + "\n" + failedList;
+        }
+        parameters.put("FAILED_LIST", failedList);
 
         return new SummaryContent(parameters, depositedLines, failedLines, notRecordedLines);
+    }
+
+    /** The reason given to each submission the run did not reach after stopping. */
+    public static String notAttemptedReason(long stoppedOnSubmissionId) {
+        return "Not attempted: the batch stopped after an internal error on submission #" + stoppedOnSubmissionId;
+    }
+
+    static String stoppedNote(BatchStop stop) {
+        String start = "The batch stopped early after an internal error on submission #" + stop.getSubmissionId() + ". ";
+        int notAttempted = stop.getNotAttempted();
+        if (notAttempted == 0) {
+            return start + "Every other submission had already been attempted.";
+        }
+        if (notAttempted == 1) {
+            return start + "1 submission was not attempted; it is listed below as failed and can be retried.";
+        }
+        return start + notAttempted + " submissions were not attempted; they are listed below as failed and can be retried.";
     }
 
     private static void addCapped(List<String> lines, String line) {

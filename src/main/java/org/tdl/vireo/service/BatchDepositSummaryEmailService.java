@@ -15,6 +15,7 @@ import org.tdl.vireo.model.DepositLocation;
 import org.tdl.vireo.model.EmailTemplate;
 import org.tdl.vireo.model.User;
 import org.tdl.vireo.model.batch.BatchDepositSummaryBuilder;
+import org.tdl.vireo.model.batch.BatchStop;
 import org.tdl.vireo.model.batch.DepositOutcome;
 import org.tdl.vireo.model.repo.EmailTemplateRepo;
 import org.tdl.vireo.utility.TemplateUtility;
@@ -44,6 +45,13 @@ public class BatchDepositSummaryEmailService {
     private VireoEmailSender emailSender;
 
     public void send(User reviewer, DepositLocation location, List<DepositOutcome> outcomes, ZonedDateTime finishedAt) {
+        send(reviewer, location, outcomes, finishedAt, null);
+    }
+
+    /**
+     * @param stop when not null, the run stopped early and the summary says so.
+     */
+    public void send(User reviewer, DepositLocation location, List<DepositOutcome> outcomes, ZonedDateTime finishedAt, BatchStop stop) {
         int deposited = 0;
         int failed = 0;
         int notRecorded = 0;
@@ -83,7 +91,7 @@ public class BatchDepositSummaryEmailService {
             }
 
             Map<String, String> values = new BatchDepositSummaryBuilder()
-                .build(location == null ? null : location.getName(), outcomes, finishedAt, legacyTemplate)
+                .build(location == null ? null : location.getName(), outcomes, finishedAt, legacyTemplate, stop)
                 .getParameters();
 
             String subject = templateUtility.templateLiteral(template.getSubject(), values);

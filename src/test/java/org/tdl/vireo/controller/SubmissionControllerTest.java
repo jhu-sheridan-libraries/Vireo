@@ -187,6 +187,36 @@ public class SubmissionControllerTest extends AbstractControllerTest {
         });
     }
 
+    @Test
+    public void testBatchPublishNotRecordedIsErrorWithSeparateCount() {
+        List<DepositOutcome> outcomes = new ArrayList<>();
+        outcomes.add(DepositOutcome.deposited(1L, "One"));
+        outcomes.add(DepositOutcome.notRecorded(2L, "Two", "http://repo.example.org/2", "log failed", new RuntimeException("log failed")));
+        when(batchDepositService.publish(TEST_USER_1, 7L)).thenReturn(new BatchDepositResult(outcomes));
+
+        ApiResponse result = submissionController.batchPublish(TEST_USER_1, 7L);
+
+        assertEquals(ApiStatus.ERROR, result.getMeta().getStatus());
+        assertEquals("Batch publish finished: 1 deposited, 0 failed, 1 deposited but not recorded in Vireo (do not retry these). See the summary email for details.",
+            result.getMeta().getMessage());
+        Map<String, Object> counts = counts(result);
+        assertEquals(1, counts.get("deposited"));
+        assertEquals(0, counts.get("failed"));
+        assertEquals(1, counts.get("notRecorded"));
+    }
+
+    @Test
+    public void testBatchPublishMessageOmitsNotRecordedWhenZero() {
+        List<DepositOutcome> outcomes = new ArrayList<>();
+        outcomes.add(DepositOutcome.failed(1L, "One", "boom", new RuntimeException("boom")));
+        when(batchDepositService.publish(TEST_USER_1, 7L)).thenReturn(new BatchDepositResult(outcomes));
+
+        ApiResponse result = submissionController.batchPublish(TEST_USER_1, 7L);
+
+        assertEquals("Batch publish finished: 0 deposited, 1 failed. See the summary email for details.", result.getMeta().getMessage());
+        assertEquals(0, counts(result).get("notRecorded"));
+    }
+
     @SuppressWarnings("unchecked")
     private Map<String, Object> counts(ApiResponse result) {
         Object payload = result.getPayload().values().iterator().next();

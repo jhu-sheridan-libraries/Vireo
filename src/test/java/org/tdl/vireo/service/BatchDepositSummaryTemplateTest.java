@@ -44,8 +44,30 @@ public class BatchDepositSummaryTemplateTest {
     private static final String RESOURCE_PATH = "/emails/SYSTEM_Batch_Deposit_Summary.email";
 
     private static final List<String> PARAMETERS = Arrays.asList(
-        "DEPOSIT_LOCATION", "TOTAL_COUNT", "DEPOSITED_COUNT", "FAILED_COUNT",
-        "FINISHED_AT", "DEPOSITED_LIST", "FAILED_LIST");
+        "DEPOSIT_LOCATION", "TOTAL_COUNT", "DEPOSITED_COUNT", "FAILED_COUNT", "NOT_RECORDED_COUNT",
+        "FINISHED_AT", "NOT_RECORDED_LIST", "DEPOSITED_LIST", "FAILED_LIST");
+
+    @Test
+    public void testNotRecordedSectionComesFirstAndSubjectHasAllCounts() throws Exception {
+        String content = readResource();
+        String uncommented = Arrays.stream(content.split("\\r?\\n"))
+            .filter(l -> !l.startsWith("#"))
+            .collect(Collectors.joining("\n"));
+
+        assertTrue(uncommented.contains("Subject: Batch Publish Summary: {DEPOSITED_COUNT} deposited, {FAILED_COUNT} failed, {NOT_RECORDED_COUNT} not recorded"), uncommented);
+        int notRecorded = uncommented.indexOf("{NOT_RECORDED_LIST}");
+        assertTrue(notRecorded >= 0 && notRecorded < uncommented.indexOf("{FAILED_LIST}") && notRecorded < uncommented.indexOf("{DEPOSITED_LIST}"),
+            "Not recorded section must come before the failed and deposited lists");
+    }
+
+    @Test
+    public void testInstalledTemplateKeepsNotRecordedPlaceholder() throws Exception {
+        // The loader strips any line containing '#'; the installed message must still have the new section.
+        EmailTemplate template = emailTemplateRepo.findByNameAndSystemRequired(TEMPLATE_NAME, true);
+        assertTrue(template.getMessage().contains("{NOT_RECORDED_LIST}"), template.getMessage());
+        assertTrue(template.getMessage().contains("Publishing them again creates duplicates."), template.getMessage());
+        assertTrue(template.getSubject().contains("{NOT_RECORDED_COUNT} not recorded"), template.getSubject());
+    }
 
     @Autowired
     private SystemDataLoader systemDataLoader;

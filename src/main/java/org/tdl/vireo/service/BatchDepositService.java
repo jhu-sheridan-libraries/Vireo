@@ -104,22 +104,27 @@ public class BatchDepositService {
 
     private DepositOutcome attempt(User user, DepositLocation depositLocation, Depositor depositor, SubmissionStatus publishedStatus, Submission submission) {
         String title = titleOf(submission);
-        String previousDepositURL = submission.getDepositURL();
-        boolean depositURLChanged = false;
+        long submissionId = submission.getId();
+        String depositURL = null;
+        boolean depositedRemotely = false;
 
         try {
             ExportPackage exportPackage = packagerUtility.packageExport(depositLocation.getPackager(), submission);
-            String depositURL = depositor.deposit(depositLocation, exportPackage);
+            depositURL = depositor.deposit(depositLocation, exportPackage);
+            // From here on the item exists in the repository and cannot be taken back.
+            depositedRemotely = true;
             submission.setDepositURL(depositURL);
-            depositURLChanged = true;
             submission = submissionRepo.updateStatus(submission, publishedStatus, user);
         } catch (Exception e) {
-            LOG.error("Batch publish failed to deposit submission {}.", submission.getId(), e);
-            if (depositURLChanged) {
-                // A failure after setDepositURL must leave the persisted value unchanged.
-                submission.setDepositURL(previousDepositURL);
+            if (depositedRemotely) {
+                // updateStatus is not atomic: it may have failed before or after saving the
+                // submission. Either way the reviewer must check the record by hand, not retry.
+                // Workflow emails are skipped because the Published status may not be saved.
+                LOG.error("Batch publish deposited submission {} to {} but could not record it in Vireo. Do not retry; check the record by hand.", submissionId, depositURL, e);
+                return DepositOutcome.notRecorded(submissionId, title, depositURL, FailureReason.of(e), e);
             }
-            return DepositOutcome.failed(submission.getId(), title, FailureReason.of(e), e);
+            LOG.error("Batch publish failed to deposit submission {}.", submissionId, e);
+            return DepositOutcome.failed(submissionId, title, FailureReason.of(e), e);
         }
 
         // Workflow emails are best effort; a failure here must not change the Deposited outcome.

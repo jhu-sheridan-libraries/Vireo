@@ -30,6 +30,8 @@ public class BatchDepositSummaryEmailService {
 
     public static final String TEMPLATE_NAME = "SYSTEM Batch Deposit Summary";
 
+    static final String NOT_RECORDED_LIST_PLACEHOLDER = "{NOT_RECORDED_LIST}";
+
     private static final Logger LOG = LoggerFactory.getLogger(BatchDepositSummaryEmailService.class);
 
     @Autowired
@@ -44,11 +46,14 @@ public class BatchDepositSummaryEmailService {
     public void send(User reviewer, DepositLocation location, List<DepositOutcome> outcomes, ZonedDateTime finishedAt) {
         int deposited = 0;
         int failed = 0;
+        int notRecorded = 0;
         try {
             if (outcomes != null) {
                 for (DepositOutcome outcome : outcomes) {
                     if (outcome.isDeposited()) {
                         deposited++;
+                    } else if (outcome.isNotRecorded()) {
+                        notRecorded++;
                     } else {
                         failed++;
                     }
@@ -70,8 +75,15 @@ public class BatchDepositSummaryEmailService {
                 return;
             }
 
+            // A template saved before NOT_RECORDED_LIST existed (an older system template kept as a
+            // custom copy, or an administrator's edit) still has to show those submissions.
+            boolean legacyTemplate = template.getMessage() == null || !template.getMessage().contains(NOT_RECORDED_LIST_PLACEHOLDER);
+            if (legacyTemplate) {
+                LOG.warn("Batch deposit summary email template '{}' has no {} placeholder. Deposited but not recorded submissions are listed under failed deposits. Update the template.", TEMPLATE_NAME, NOT_RECORDED_LIST_PLACEHOLDER);
+            }
+
             Map<String, String> values = new BatchDepositSummaryBuilder()
-                .build(location == null ? null : location.getName(), outcomes, finishedAt)
+                .build(location == null ? null : location.getName(), outcomes, finishedAt, legacyTemplate)
                 .getParameters();
 
             String subject = templateUtility.templateLiteral(template.getSubject(), values);
@@ -79,9 +91,9 @@ public class BatchDepositSummaryEmailService {
 
             emailSender.sendEmail(address, subject, message);
         } catch (MessagingException | MailException e) {
-            logSendFailure(reviewer, deposited, failed, e);
+            logSendFailure(reviewer, deposited, failed, notRecorded, e);
         } catch (RuntimeException e) {
-            logSendFailure(reviewer, deposited, failed, e);
+            logSendFailure(reviewer, deposited, failed, notRecorded, e);
         }
     }
 
@@ -97,8 +109,8 @@ public class BatchDepositSummaryEmailService {
         return reviewer == null ? "unknown" : reviewer.getName() + " (id " + reviewer.getId() + ")";
     }
 
-    private static void logSendFailure(User reviewer, int deposited, int failed, Exception e) {
-        LOG.error("Batch deposit summary email to reviewer {} failed (Deposited: {}, Failed: {}).", reviewerName(reviewer), deposited, failed, e);
+    private static void logSendFailure(User reviewer, int deposited, int failed, int notRecorded, Exception e) {
+        LOG.error("Batch deposit summary email to reviewer {} failed (Deposited: {}, Failed: {}, Not recorded: {}).", reviewerName(reviewer), deposited, failed, notRecorded, e);
     }
 
 }

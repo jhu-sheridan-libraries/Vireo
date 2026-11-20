@@ -22,40 +22,75 @@ public final class BatchDepositSummaryBuilder {
 
     public static final String NO_DEPOSITS = "No submissions were deposited.";
 
+    public static final String NO_NOT_RECORDED = "No submissions were left unrecorded.";
+
+    public static final String NO_DEPOSIT_URL = "(no deposit URL returned)";
+
+    /** Marks a deposited-but-not-recorded entry when it is listed among failed deposits (old template). */
+    public static final String NOT_RECORDED_MARKER = "Deposited, not recorded in Vireo (do not retry)";
+
     private static final DateTimeFormatter FINISHED_AT_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
 
     public SummaryContent build(String depositLocationName, List<DepositOutcome> outcomes, ZonedDateTime finishedAt) {
+        return build(depositLocationName, outcomes, finishedAt, false);
+    }
+
+    /**
+     * @param legacyTemplate true when the template has no NOT_RECORDED_LIST placeholder. Deposited but
+     *                       not recorded entries are then also listed in FAILED_LIST, marked as such,
+     *                       and counted in FAILED_COUNT, so they still reach the reviewer.
+     */
+    public SummaryContent build(String depositLocationName, List<DepositOutcome> outcomes, ZonedDateTime finishedAt, boolean legacyTemplate) {
         List<DepositOutcome> all = outcomes == null ? new ArrayList<>() : outcomes;
 
         List<String> depositedLines = new ArrayList<>();
         List<String> failedLines = new ArrayList<>();
+        List<String> notRecordedLines = new ArrayList<>();
         int deposited = 0;
         int failed = 0;
+        int notRecorded = 0;
 
         for (DepositOutcome outcome : all) {
-            if (outcome.isDeposited()) {
+            switch (outcome.getStatus()) {
+            case DEPOSITED:
                 deposited++;
-                if (depositedLines.size() < MAX_ENTRIES) {
-                    depositedLines.add("- #" + outcome.getSubmissionId() + " " + title(outcome));
+                addCapped(depositedLines, "- #" + outcome.getSubmissionId() + " " + title(outcome));
+                break;
+            case NOT_RECORDED:
+                notRecorded++;
+                addCapped(notRecordedLines, "- #" + outcome.getSubmissionId() + " " + title(outcome) + " (" + depositURL(outcome) + "): " + singleLine(outcome.getFailureReason()));
+                if (legacyTemplate) {
+                    addCapped(failedLines, "- #" + outcome.getSubmissionId() + " " + title(outcome) + " (" + depositURL(outcome) + "): " + NOT_RECORDED_MARKER + ": " + singleLine(outcome.getFailureReason()));
                 }
-            } else {
+                break;
+            case FAILED:
+            default:
                 failed++;
-                if (failedLines.size() < MAX_ENTRIES) {
-                    failedLines.add("- #" + outcome.getSubmissionId() + " " + title(outcome) + ": " + singleLine(outcome.getFailureReason()));
-                }
+                addCapped(failedLines, "- #" + outcome.getSubmissionId() + " " + title(outcome) + ": " + singleLine(outcome.getFailureReason()));
+                break;
             }
         }
 
+        int failedShown = legacyTemplate ? failed + notRecorded : failed;
+
         Map<String, String> parameters = new LinkedHashMap<>();
         parameters.put("DEPOSIT_LOCATION", depositLocationName == null ? "" : depositLocationName);
-        parameters.put("TOTAL_COUNT", String.valueOf(deposited + failed));
+        parameters.put("TOTAL_COUNT", String.valueOf(deposited + failed + notRecorded));
         parameters.put("DEPOSITED_COUNT", String.valueOf(deposited));
-        parameters.put("FAILED_COUNT", String.valueOf(failed));
+        parameters.put("FAILED_COUNT", String.valueOf(failedShown));
+        parameters.put("NOT_RECORDED_COUNT", String.valueOf(notRecorded));
         parameters.put("FINISHED_AT", finishedAt.format(FINISHED_AT_FORMAT));
+        parameters.put("NOT_RECORDED_LIST", listText(notRecordedLines, notRecorded, NO_NOT_RECORDED));
         parameters.put("DEPOSITED_LIST", listText(depositedLines, deposited, NO_DEPOSITS));
-        parameters.put("FAILED_LIST", listText(failedLines, failed, NO_FAILURES));
+        parameters.put("FAILED_LIST", listText(failedLines, failedShown, NO_FAILURES));
 
-        return new SummaryContent(parameters, depositedLines, failedLines);
+        return new SummaryContent(parameters, depositedLines, failedLines, notRecordedLines);
+    }
+
+    private static void addCapped(List<String> lines, String line) {
+        if (lines.size() < MAX_ENTRIES) {
+            lines.add(line);
+        }
     }
 
     private static String listText(List<String> lines, int total, String emptyText) {
@@ -71,6 +106,11 @@ public final class BatchDepositSummaryBuilder {
 
     private static String title(DepositOutcome outcome) {
         return outcome.getTitle() == null ? NO_TITLE : singleLine(outcome.getTitle());
+    }
+
+    private static String depositURL(DepositOutcome outcome) {
+        String url = outcome.getDepositURL();
+        return url == null || url.trim().isEmpty() ? NO_DEPOSIT_URL : singleLine(url);
     }
 
     private static String singleLine(String value) {

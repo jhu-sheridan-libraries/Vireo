@@ -19,6 +19,7 @@ import org.tdl.vireo.mock.BatchTestGenerators;
 import org.tdl.vireo.model.DepositLocation;
 import org.tdl.vireo.model.EmailTemplate;
 import org.tdl.vireo.model.User;
+import org.tdl.vireo.model.batch.BatchDepositSummaryBuilder;
 import org.tdl.vireo.model.batch.DepositOutcome;
 import org.tdl.vireo.model.repo.EmailTemplateRepo;
 import org.tdl.vireo.utility.TemplateUtility;
@@ -55,7 +56,8 @@ public class BatchDepositSummaryEmailServiceAddressPropertyTest {
             EmailTemplateRepo repo = mock(EmailTemplateRepo.class);
             EmailTemplate template = mock(EmailTemplate.class);
             when(template.getSubject()).thenReturn("subject");
-            when(template.getMessage()).thenReturn("message");
+            // A current template (has NOT_RECORDED_LIST), so the outdated-template warning does not apply.
+            when(template.getMessage()).thenReturn("message {NOT_RECORDED_LIST}");
             when(repo.findByNameAndSystemRequired(TEMPLATE_NAME, false)).thenReturn(template);
             VireoEmailSender sender = mock(VireoEmailSender.class);
 
@@ -86,7 +88,7 @@ public class BatchDepositSummaryEmailServiceAddressPropertyTest {
                 if (expectSend) {
                     try {
                         verify(sender, times(1)).sendEmail(anyString(), anyString(), anyString());
-                        verify(sender).sendEmail(selected, "subject", "message");
+                        verify(sender).sendEmail(selected, "subject", "message " + BatchDepositSummaryBuilder.NO_NOT_RECORDED);
                     } catch (Exception e) {
                         throw new AssertionError(where + "sender verification failed: " + e.getMessage(), e);
                     }

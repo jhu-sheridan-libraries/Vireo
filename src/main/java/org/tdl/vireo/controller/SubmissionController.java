@@ -892,16 +892,19 @@ public class SubmissionController {
 
         int deposited = result.deposited();
         int failed = result.failed();
+        int notRecorded = result.notRecorded();
 
         Map<String, Object> counts = new HashMap<String, Object>();
         counts.put("deposited", deposited);
         counts.put("failed", failed);
+        counts.put("notRecorded", notRecorded);
 
-        if (failed == 0) {
+        if (failed == 0 && notRecorded == 0) {
             return new ApiResponse(SUCCESS, counts);
         }
 
-        return new ApiResponse(ERROR, "Batch publish finished: " + deposited + " deposited, " + failed + " failed. See the summary email for details.", counts);
+        String notRecordedText = notRecorded > 0 ? ", " + notRecorded + " deposited but not recorded in Vireo (do not retry these)" : "";
+        return new ApiResponse(ERROR, "Batch publish finished: " + deposited + " deposited, " + failed + " failed" + notRecordedText + ". See the summary email for details.", counts);
     }
 
     @RequestMapping(value = "/{submissionId}/submit-date", method = RequestMethod.POST)

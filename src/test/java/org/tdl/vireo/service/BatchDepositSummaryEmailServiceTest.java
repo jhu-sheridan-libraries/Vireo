@@ -220,4 +220,56 @@ public class BatchDepositSummaryEmailServiceTest {
         assertEquals(0, logs(Level.ERROR).size());
     }
 
+    private final List<DepositOutcome> withNotRecorded = Arrays.asList(
+        DepositOutcome.deposited(1, "First"),
+        DepositOutcome.failed(2, "Second", "boom", new RuntimeException("boom")),
+        DepositOutcome.notRecorded(3, "Third", "http://repo.example.org/3", "log failed", new RuntimeException("log failed")));
+
+    @Test
+    public void testCurrentTemplateListsNotRecordedSeparatelyWithoutWarning() throws Exception {
+        doReturn(template("{DEPOSITED_COUNT} deposited, {FAILED_COUNT} failed, {NOT_RECORDED_COUNT} not recorded",
+            "NR:\n{NOT_RECORDED_LIST}\nF:\n{FAILED_LIST}")).when(emailTemplateRepo).findByNameAndSystemRequired(TEMPLATE_NAME, false);
+
+        service.send(reviewer("rita@example.org", null), location("Repo"), withNotRecorded, finishedAt);
+
+        ArgumentCaptor<String> subject = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);
+        verify(emailSender).sendEmail(anyString(), subject.capture(), body.capture());
+        assertEquals("1 deposited, 1 failed, 1 not recorded", subject.getValue());
+        assertEquals("NR:\n- #3 Third (http://repo.example.org/3): log failed\nF:\n- #2 Second: boom", body.getValue());
+        assertEquals(0, logs(Level.WARN).size());
+    }
+
+    @Test
+    public void testLegacyTemplateFoldsNotRecordedIntoFailedAndWarnsOnce() throws Exception {
+        doReturn(template("{DEPOSITED_COUNT} deposited, {FAILED_COUNT} failed",
+            "F:\n{FAILED_LIST}")).when(emailTemplateRepo).findByNameAndSystemRequired(TEMPLATE_NAME, false);
+
+        service.send(reviewer("rita@example.org", null), location("Repo"), withNotRecorded, finishedAt);
+
+        ArgumentCaptor<String> subject = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);
+        verify(emailSender).sendEmail(anyString(), subject.capture(), body.capture());
+        assertEquals("1 deposited, 2 failed", subject.getValue());
+        assertTrue(body.getValue().contains("- #2 Second: boom"), body.getValue());
+        assertTrue(body.getValue().contains("- #3 Third (http://repo.example.org/3): Deposited, not recorded in Vireo (do not retry): log failed"), body.getValue());
+        List<ILoggingEvent> warns = logs(Level.WARN);
+        assertEquals(1, warns.size());
+        assertTrue(warns.get(0).getFormattedMessage().contains("{NOT_RECORDED_LIST}"), warns.get(0).getFormattedMessage());
+        assertTrue(warns.get(0).getFormattedMessage().contains(TEMPLATE_NAME), warns.get(0).getFormattedMessage());
+    }
+
+    @Test
+    public void testSendFailureLogIncludesNotRecordedCount() throws Exception {
+        doReturn(template("s", "{NOT_RECORDED_LIST}")).when(emailTemplateRepo).findByNameAndSystemRequired(TEMPLATE_NAME, false);
+        doThrow(new MailSendException("smtp down")).when(emailSender).sendEmail(anyString(), anyString(), anyString());
+
+        service.send(reviewer("rita@example.org", null), location("Repo"), withNotRecorded, finishedAt);
+
+        List<ILoggingEvent> errors = logs(Level.ERROR);
+        assertEquals(1, errors.size());
+        String message = errors.get(0).getFormattedMessage();
+        assertTrue(message.contains("Deposited: 1") && message.contains("Failed: 1") && message.contains("Not recorded: 1"), message);
+    }
+
 }

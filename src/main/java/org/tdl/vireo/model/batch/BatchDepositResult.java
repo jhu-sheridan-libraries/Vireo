@@ -45,17 +45,28 @@ public final class BatchDepositResult {
     }
 
     public int deposited() {
+        return count(DepositOutcome.Status.DEPOSITED);
+    }
+
+    public int failed() {
+        return count(DepositOutcome.Status.FAILED);
+    }
+
+    /**
+     * @return the number of submissions deposited to the repository but not recorded in Vireo.
+     */
+    public int notRecorded() {
+        return count(DepositOutcome.Status.NOT_RECORDED);
+    }
+
+    private int count(DepositOutcome.Status status) {
         int count = 0;
         for (DepositOutcome outcome : outcomes) {
-            if (outcome.isDeposited()) {
+            if (outcome.getStatus() == status) {
                 count++;
             }
         }
         return count;
-    }
-
-    public int failed() {
-        return total() - deposited();
     }
 
     public int total() {

@@ -3,19 +3,30 @@
 # Parameters:
 #   {DEPOSIT_LOCATION}: The name of the deposit location the batch was published to.
 #   {TOTAL_COUNT}: The number of submissions attempted.
-#   {DEPOSITED_COUNT}: The number of submissions successfully deposited.
+#   {DEPOSITED_COUNT}: The number of submissions deposited and recorded as Published.
 #   {FAILED_COUNT}: The number of submissions that failed to deposit.
+#   {NOT_RECORDED_COUNT}: The number of submissions deposited to the repository but not recorded in Vireo.
 #   {FINISHED_AT}: The date, time, and time zone at which the batch finished.
+#   {NOT_RECORDED_LIST}: One line per submission deposited but not recorded (id, title, deposit URL, and reason).
 #   {DEPOSITED_LIST}: One line per deposited submission (id and title).
 #   {FAILED_LIST}: One line per failed submission (id, title, and reason).
 #
-Subject: Batch Publish Summary: {DEPOSITED_COUNT} deposited, {FAILED_COUNT} failed
+# If a template has no {NOT_RECORDED_LIST}, deposited but not recorded submissions are
+# listed in {FAILED_LIST} and counted in {FAILED_COUNT} instead.
+#
+Subject: Batch Publish Summary: {DEPOSITED_COUNT} deposited, {FAILED_COUNT} failed, {NOT_RECORDED_COUNT} not recorded
 
 Batch publish to {DEPOSIT_LOCATION} finished at {FINISHED_AT}.
 
 Attempted: {TOTAL_COUNT}
 Deposited: {DEPOSITED_COUNT}
 Failed: {FAILED_COUNT}
+Deposited, not recorded: {NOT_RECORDED_COUNT}
+
+Deposited, not recorded (do not retry):
+These submissions were deposited to {DEPOSIT_LOCATION}, but Vireo could not record the deposit.
+Check each one in the repository and correct its Vireo record by hand. Publishing them again creates duplicates.
+{NOT_RECORDED_LIST}
 
 Failed deposits:
 {FAILED_LIST}

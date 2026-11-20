@@ -11,6 +11,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -93,6 +95,9 @@ public class BatchDepositServiceOutcomeEffectsTest {
             Set[] priorLogs = new Set[size];
             boolean[] depositFails = new boolean[size];
             boolean[] statusUpdateFails = new boolean[size];
+            // Like the real SubmissionRepoImpl.updateStatus, which sets and saves the status before
+            // its websocket send and action log, either of which can still throw.
+            boolean[] failsAfterSave = new boolean[size];
             boolean[] emailFails = new boolean[size];
             RuntimeException[] depositErrors = new RuntimeException[size];
             for (int i = 0; i < size; i++) {
@@ -110,9 +115,10 @@ public class BatchDepositServiceOutcomeEffectsTest {
                 submission.setActionLogs(logs);
                 priorLogs[i] = new HashSet<>(logs);
 
-                int mode = gen.random().nextInt(3);
+                int mode = gen.random().nextInt(4);
                 depositFails[i] = mode == 1;
-                statusUpdateFails[i] = mode == 2;
+                statusUpdateFails[i] = mode == 2 || mode == 3;
+                failsAfterSave[i] = mode == 3;
                 emailFails[i] = gen.random().nextBoolean();
                 depositErrors[i] = new RuntimeException("deposit failed " + i, new IllegalStateException("root " + i));
 
@@ -134,14 +140,17 @@ public class BatchDepositServiceOutcomeEffectsTest {
                 }
                 return "http://deposited.example.org/" + index;
             });
-            // Models the repository: status changes on success, throws for the failing-after-URL case.
+            // Models the repository: throws before saving, or sets the status and then throws, or succeeds.
             lenient().when(submissionRepo.updateStatus(any(Submission.class), any(), any())).thenAnswer(inv -> {
                 Submission s = inv.getArgument(0);
                 int index = (int) (s.getId() - 1L);
-                if (statusUpdateFails[index]) {
-                    throw new IllegalStateException("status update failed " + index);
+                if (statusUpdateFails[index] && !failsAfterSave[index]) {
+                    throw new IllegalStateException("status update failed before save " + index);
                 }
                 s.setSubmissionStatus(inv.getArgument(1));
+                if (failsAfterSave[index]) {
+                    throw new IllegalStateException("status update failed after save " + index);
+                }
                 return s;
             });
 
@@ -165,16 +174,25 @@ public class BatchDepositServiceOutcomeEffectsTest {
                 String sctx = " submission " + i + ctx;
                 assertEquals(1L + i, outcome.getSubmissionId(), "outcome id" + sctx);
 
-                if (depositFails[i] || statusUpdateFails[i]) {
-                    // Failed: status, URL, and action log as before; exception retained.
-                    assertFalse(outcome.isDeposited(), "failed outcome" + sctx);
+                if (depositFails[i]) {
+                    // Failed: nothing deposited; status, URL, and action log as before; exception retained.
+                    assertTrue(outcome.isFailed(), "failed outcome" + sctx);
                     assertSame(priorStatus[i], submission.getSubmissionStatus(), "status unchanged" + sctx);
                     assertEquals(priorUrl[i], submission.getDepositURL(), "deposit URL unchanged" + sctx);
                     assertEquals(priorLogs[i], submission.getActionLogs(), "action log unchanged" + sctx);
+                    assertSame(depositErrors[i], outcome.getCause(), "deposit exception retained" + sctx);
+                    assertNull(outcome.getDepositURL(), "no deposit URL on failed" + sctx);
+                    verify(submissionEmailService, never()).sendWorkflowEmails(user, 1L + i);
+                } else if (statusUpdateFails[i]) {
+                    // Deposited remotely but not recorded: the repository's URL is kept, never reset,
+                    // and no workflow emails are sent, whether the save happened or not.
+                    assertTrue(outcome.isNotRecorded(), "not recorded outcome (afterSave=" + failsAfterSave[i] + ")" + sctx);
+                    assertEquals("http://deposited.example.org/" + i, outcome.getDepositURL(), "deposit URL on outcome" + sctx);
+                    assertEquals("http://deposited.example.org/" + i, submission.getDepositURL(), "deposit URL not reset" + sctx);
+                    assertSame(failsAfterSave[i] ? published : priorStatus[i], submission.getSubmissionStatus(), "status as left by updateStatus" + sctx);
                     assertNotNull(outcome.getCause(), "exception retained" + sctx);
-                    if (depositFails[i]) {
-                        assertSame(depositErrors[i], outcome.getCause(), "deposit exception retained" + sctx);
-                    }
+                    assertNotNull(outcome.getFailureReason(), "reason present" + sctx);
+                    verify(submissionEmailService, never()).sendWorkflowEmails(user, 1L + i);
                 } else {
                     // Deposited: URL from depositor, status Published, even if workflow email failed.
                     assertTrue(outcome.isDeposited(), "deposited outcome (emailFails=" + emailFails[i] + ")" + sctx);

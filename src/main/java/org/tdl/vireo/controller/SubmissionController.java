@@ -886,7 +886,7 @@ public class SubmissionController {
     public ApiResponse batchPublish(@WeaverUser User user, @PathVariable Long depositLocationId) {
         BatchDepositResult result = batchDepositService.publish(user, depositLocationId);
 
-        if (result.getPreconditionError() != null) {
+        if (result.isPreconditionFailed()) {
             return new ApiResponse(ERROR, result.getPreconditionError());
         }
 

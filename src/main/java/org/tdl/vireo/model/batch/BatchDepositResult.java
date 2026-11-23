@@ -25,7 +25,15 @@ public final class BatchDepositResult {
         this.preconditionError = preconditionError;
     }
 
+    /**
+     * @param message why the run could not start; must not be null or blank, because a
+     *                missing message would make the result look like a run that started
+     * @throws IllegalArgumentException when the message is null or blank
+     */
     public static BatchDepositResult preconditionFailed(String message) {
+        if (message == null || message.trim().isEmpty()) {
+            throw new IllegalArgumentException("A precondition failure needs a message");
+        }
         return new BatchDepositResult(null, message);
     }
 

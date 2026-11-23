@@ -93,7 +93,8 @@ public class BatchDepositSummaryEmailService {
                 .build(location == null ? null : location.getName(), outcomes, finishedAt, legacyTemplate, stop)
                 .getParameters();
 
-            String subject = templateUtility.templateLiteral(template.getSubject(), values);
+            // The subject is a mail header: it must never contain a line break, whatever the template holds.
+            String subject = singleLine(templateUtility.templateLiteral(template.getSubject(), values));
             String message = templateUtility.templateLiteral(template.getMessage(), values);
 
             emailSender.sendEmail(address, subject, message);
@@ -101,6 +102,10 @@ public class BatchDepositSummaryEmailService {
             // RuntimeException includes Spring's MailException (org.springframework.mail).
             logSendFailure(reviewer, deposited, failed, notRecorded, e);
         }
+    }
+
+    private static String singleLine(String value) {
+        return value == null ? null : value.replaceAll("[\\r\\n]+", " ");
     }
 
     private static String reviewerAddress(User reviewer) {

@@ -43,6 +43,14 @@ public class BatchDepositSummaryBuilderNotRecordedTest {
     }
 
     @Test
+    public void depositLocationIsSingleLineAndNullBecomesEmpty() {
+        BatchDepositSummaryBuilder builder = new BatchDepositSummaryBuilder();
+
+        assertEquals("Repo One Two", builder.build("Repo\r\nOne\nTwo", outcomes, FINISHED_AT).getParameters().get("DEPOSIT_LOCATION"));
+        assertEquals("", builder.build(null, outcomes, FINISHED_AT).getParameters().get("DEPOSIT_LOCATION"));
+    }
+
+    @Test
     public void noNotRecordedShowsNoneText() {
         Map<String, String> p = new BatchDepositSummaryBuilder()
             .build("Repo", Arrays.asList(DepositOutcome.deposited(1, "One")), FINISHED_AT).getParameters();

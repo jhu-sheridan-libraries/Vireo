@@ -277,6 +277,32 @@ public class BatchDepositSummaryEmailServiceTest {
     }
 
     @Test
+    public void testDepositLocationLineBreaksAreFlattenedInSubjectAndBody() throws Exception {
+        doReturn(template("To {DEPOSIT_LOCATION}", "Location: {DEPOSIT_LOCATION}.")).when(emailTemplateRepo).findByNameAndSystemRequired(TEMPLATE_NAME, false);
+
+        service.send(reviewer("rita@example.org", null), location("Repo\r\nBcc: someone@example.org\nX"), outcomes, finishedAt);
+
+        ArgumentCaptor<String> subject = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);
+        verify(emailSender).sendEmail(anyString(), subject.capture(), body.capture());
+        assertEquals("To Repo Bcc: someone@example.org X", subject.getValue());
+        assertEquals("Location: Repo Bcc: someone@example.org X.", body.getValue());
+    }
+
+    @Test
+    public void testSubjectNeverContainsALineBreakEvenFromTheTemplate() throws Exception {
+        doReturn(template("Summary\r\nfor {DEPOSIT_LOCATION}\n", "line one\nline two")).when(emailTemplateRepo).findByNameAndSystemRequired(TEMPLATE_NAME, false);
+
+        service.send(reviewer("rita@example.org", null), location("Repo"), outcomes, finishedAt);
+
+        ArgumentCaptor<String> subject = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);
+        verify(emailSender).sendEmail(anyString(), subject.capture(), body.capture());
+        assertEquals("Summary for Repo ", subject.getValue());
+        assertEquals("line one\nline two", body.getValue(), "the body keeps its line breaks");
+    }
+
+    @Test
     public void testSendFailureLogIncludesNotRecordedCount() throws Exception {
         doReturn(template("s", "{NOT_RECORDED_LIST}")).when(emailTemplateRepo).findByNameAndSystemRequired(TEMPLATE_NAME, false);
         doThrow(new MailSendException("smtp down")).when(emailSender).sendEmail(anyString(), anyString(), anyString());

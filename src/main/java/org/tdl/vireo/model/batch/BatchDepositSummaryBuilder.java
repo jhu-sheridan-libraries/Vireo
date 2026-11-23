@@ -83,7 +83,7 @@ public final class BatchDepositSummaryBuilder {
         int failedShown = legacyTemplate ? failed + notRecorded : failed;
 
         Map<String, String> parameters = new LinkedHashMap<>();
-        parameters.put("DEPOSIT_LOCATION", depositLocationName == null ? "" : depositLocationName);
+        parameters.put("DEPOSIT_LOCATION", singleLine(depositLocationName));
         parameters.put("TOTAL_COUNT", String.valueOf(deposited + failed + notRecorded));
         parameters.put("DEPOSITED_COUNT", String.valueOf(deposited));
         parameters.put("FAILED_COUNT", String.valueOf(failedShown));

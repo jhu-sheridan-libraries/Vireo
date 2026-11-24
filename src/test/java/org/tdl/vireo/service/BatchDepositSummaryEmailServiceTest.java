@@ -35,6 +35,7 @@ import org.tdl.vireo.model.User;
 import org.tdl.vireo.model.batch.BatchDepositSummaryBuilder;
 import org.tdl.vireo.model.batch.BatchStop;
 import org.tdl.vireo.model.batch.DepositOutcome;
+import org.tdl.vireo.model.batch.SummaryEmailResult;
 import org.tdl.vireo.model.repo.EmailTemplateRepo;
 import org.tdl.vireo.utility.TemplateUtility;
 
@@ -300,6 +301,34 @@ public class BatchDepositSummaryEmailServiceTest {
         verify(emailSender).sendEmail(anyString(), subject.capture(), body.capture());
         assertEquals("Summary for Repo ", subject.getValue());
         assertEquals("line one\nline two", body.getValue(), "the body keeps its line breaks");
+    }
+
+    @Test
+    public void testSendReportsSent() throws Exception {
+        doReturn(template("s", "{NOT_RECORDED_LIST}")).when(emailTemplateRepo).findByNameAndSystemRequired(TEMPLATE_NAME, false);
+
+        assertEquals(SummaryEmailResult.SENT, service.send(reviewer("rita@example.org", null), location("Repo"), outcomes, finishedAt));
+    }
+
+    @Test
+    public void testSendReportsNoAddress() throws Exception {
+        assertEquals(SummaryEmailResult.NO_ADDRESS, service.send(reviewer(" ", null), location("Repo"), outcomes, finishedAt));
+    }
+
+    @Test
+    public void testSendReportsNoTemplate() throws Exception {
+        when(emailTemplateRepo.findByNameAndSystemRequired(TEMPLATE_NAME, false)).thenReturn(null);
+        when(emailTemplateRepo.findByNameAndSystemRequired(TEMPLATE_NAME, true)).thenReturn(null);
+
+        assertEquals(SummaryEmailResult.NO_TEMPLATE, service.send(reviewer("rita@example.org", null), location("Repo"), outcomes, finishedAt));
+    }
+
+    @Test
+    public void testSendReportsSendFailed() throws Exception {
+        doReturn(template("s", "{NOT_RECORDED_LIST}")).when(emailTemplateRepo).findByNameAndSystemRequired(TEMPLATE_NAME, false);
+        doThrow(new MessagingException("smtp down")).when(emailSender).sendEmail(anyString(), anyString(), anyString());
+
+        assertEquals(SummaryEmailResult.SEND_FAILED, service.send(reviewer("rita@example.org", null), location("Repo"), outcomes, finishedAt));
     }
 
     @Test

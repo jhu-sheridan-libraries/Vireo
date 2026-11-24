@@ -17,6 +17,7 @@ import org.tdl.vireo.model.batch.BatchDepositSummaryBuilder;
 import org.tdl.vireo.model.batch.BatchStop;
 import org.tdl.vireo.model.batch.DepositOutcome;
 import org.tdl.vireo.model.batch.FailureReason;
+import org.tdl.vireo.model.batch.SummaryEmailResult;
 import org.tdl.vireo.model.depositor.Depositor;
 import org.tdl.vireo.model.export.ExportPackage;
 import org.tdl.vireo.model.repo.DepositLocationRepo;
@@ -123,8 +124,8 @@ public class BatchDepositService {
         ZonedDateTime finishedAt = ZonedDateTime.now();
 
         if (stopError == null) {
-            batchDepositSummaryEmailService.send(user, depositLocation, outcomes, finishedAt);
-            return new BatchDepositResult(outcomes);
+            SummaryEmailResult summaryEmail = batchDepositSummaryEmailService.send(user, depositLocation, outcomes, finishedAt);
+            return new BatchDepositResult(outcomes, summaryEmail);
         }
 
         // Send what is known, then rethrow so the container sees the Error. A second Error

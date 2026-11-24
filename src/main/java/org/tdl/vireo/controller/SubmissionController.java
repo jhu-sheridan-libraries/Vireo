@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -82,6 +83,8 @@ import org.tdl.vireo.model.SubmissionStatus;
 import org.tdl.vireo.model.User;
 import org.tdl.vireo.model.VocabularyWord;
 import org.tdl.vireo.model.batch.BatchDepositResult;
+import org.tdl.vireo.model.batch.DepositOutcome;
+import org.tdl.vireo.model.batch.SummaryEmailResult;
 import org.tdl.vireo.model.depositor.Depositor;
 import org.tdl.vireo.model.export.ExportPackage;
 import org.tdl.vireo.model.packager.AbstractPackager;
@@ -102,6 +105,7 @@ import org.tdl.vireo.model.response.Views;
 import org.tdl.vireo.model.validation.FieldValueValidator;
 import org.tdl.vireo.service.AssetService;
 import org.tdl.vireo.service.BatchDepositService;
+import org.tdl.vireo.service.BatchDepositSummaryEmailService;
 import org.tdl.vireo.service.DepositorService;
 import org.tdl.vireo.service.SubmissionEmailService;
 import org.tdl.vireo.utility.OrcidUtility;
@@ -904,7 +908,72 @@ public class SubmissionController {
         }
 
         String notRecordedText = notRecorded > 0 ? ", " + notRecorded + " deposited but not recorded in Vireo (do not retry these)" : "";
-        return new ApiResponse(ERROR, "Batch publish finished: " + deposited + " deposited, " + failed + " failed" + notRecordedText + ". See the summary email for details.", counts);
+        String finished = "Batch publish finished: " + deposited + " deposited, " + failed + " failed" + notRecordedText + ".";
+
+        SummaryEmailResult summaryEmail = result.getSummaryEmail();
+        if (summaryEmail == null || summaryEmail == SummaryEmailResult.SENT) {
+            return new ApiResponse(ERROR, finished + " See the summary email for details.", counts);
+        }
+
+        // Without the email, this response is the reviewer's only report: name the submissions.
+        return new ApiResponse(ERROR, finished + " No summary email was sent because " + summaryEmailNotSentReason(summaryEmail) + "."
+            + batchPublishIds(result.getOutcomes()) + " Ask an administrator to check the server log for details.", counts);
+    }
+
+    /** At most this many submission ids are named in a batch publish response. */
+    static final int BATCH_PUBLISH_MAX_IDS = 10;
+
+    private static String summaryEmailNotSentReason(SummaryEmailResult summaryEmail) {
+        switch (summaryEmail) {
+        case NO_ADDRESS:
+            return "your account has no email address";
+        case NO_TEMPLATE:
+            return "the email template '" + BatchDepositSummaryEmailService.TEMPLATE_NAME + "' is missing";
+        case SEND_FAILED:
+        default:
+            return "sending the email failed";
+        }
+    }
+
+    /**
+     * Lists the ids of Not recorded submissions, then Failed ones, at most
+     * {@link #BATCH_PUBLISH_MAX_IDS} in total, so the "do not retry" ids are never cut off.
+     */
+    static String batchPublishIds(List<DepositOutcome> outcomes) {
+        List<Long> notRecordedIds = new ArrayList<Long>();
+        List<Long> failedIds = new ArrayList<Long>();
+        for (DepositOutcome outcome : outcomes) {
+            if (outcome.isNotRecorded()) {
+                notRecordedIds.add(outcome.getSubmissionId());
+            } else if (outcome.isFailed()) {
+                failedIds.add(outcome.getSubmissionId());
+            }
+        }
+        StringBuilder text = new StringBuilder();
+        int budget = BATCH_PUBLISH_MAX_IDS;
+        budget = appendIds(text, "Not recorded", notRecordedIds, budget);
+        appendIds(text, "Failed", failedIds, budget);
+        return text.toString();
+    }
+
+    private static int appendIds(StringBuilder text, String label, List<Long> ids, int budget) {
+        if (ids.isEmpty()) {
+            return budget;
+        }
+        int listed = Math.min(ids.size(), budget);
+        text.append(" ").append(label).append(": ");
+        if (listed == 0) {
+            text.append(ids.size()).append(" not listed.");
+            return 0;
+        }
+        for (int i = 0; i < listed; i++) {
+            text.append(i == 0 ? "" : ", ").append("#").append(ids.get(i));
+        }
+        if (ids.size() > listed) {
+            text.append(", and ").append(ids.size() - listed).append(" more");
+        }
+        text.append(".");
+        return budget - listed;
     }
 
     @RequestMapping(value = "/{submissionId}/submit-date", method = RequestMethod.POST)

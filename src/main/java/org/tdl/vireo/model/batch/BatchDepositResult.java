@@ -16,13 +16,26 @@ public final class BatchDepositResult {
 
     private final String preconditionError;
 
+    private final SummaryEmailResult summaryEmail;
+
+    /**
+     * A run whose summary email was sent.
+     */
     public BatchDepositResult(List<DepositOutcome> outcomes) {
-        this(outcomes, null);
+        this(outcomes, SummaryEmailResult.SENT);
     }
 
-    private BatchDepositResult(List<DepositOutcome> outcomes, String preconditionError) {
+    /**
+     * @param summaryEmail whether the summary email was sent, and if not, why
+     */
+    public BatchDepositResult(List<DepositOutcome> outcomes, SummaryEmailResult summaryEmail) {
+        this(outcomes, null, summaryEmail);
+    }
+
+    private BatchDepositResult(List<DepositOutcome> outcomes, String preconditionError, SummaryEmailResult summaryEmail) {
         this.outcomes = outcomes == null ? Collections.<DepositOutcome>emptyList() : Collections.unmodifiableList(new ArrayList<DepositOutcome>(outcomes));
         this.preconditionError = preconditionError;
+        this.summaryEmail = summaryEmail;
     }
 
     /**
@@ -34,7 +47,15 @@ public final class BatchDepositResult {
         if (message == null || message.trim().isEmpty()) {
             throw new IllegalArgumentException("A precondition failure needs a message");
         }
-        return new BatchDepositResult(null, message);
+        // The run did not start, so there is no summary email.
+        return new BatchDepositResult(null, message, null);
+    }
+
+    /**
+     * @return whether the summary email was sent, and if not, why; null for a precondition failure.
+     */
+    public SummaryEmailResult getSummaryEmail() {
+        return summaryEmail;
     }
 
     public List<DepositOutcome> getOutcomes() {

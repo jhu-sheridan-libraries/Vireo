@@ -33,6 +33,7 @@ import org.tdl.vireo.model.User;
 import org.tdl.vireo.model.batch.BatchDepositSummaryBuilder;
 import org.tdl.vireo.model.batch.BatchStop;
 import org.tdl.vireo.model.batch.DepositOutcome;
+import org.tdl.vireo.model.batch.SummaryEmailResult;
 import org.tdl.vireo.model.depositor.Depositor;
 import org.tdl.vireo.model.export.ExportPackage;
 import org.tdl.vireo.model.packager.Packager;
@@ -204,6 +205,13 @@ public class BatchDepositServiceErrorStopTest {
         assertSame(error, thrown);
         assertEquals(1, thrown.getSuppressed().length);
         assertSame(sendError, thrown.getSuppressed()[0]);
+    }
+
+    @Test
+    public void normalRunKeepsTheSummaryEmailResult() {
+        org.mockito.Mockito.when(summaryEmailService.send(any(), any(), any(), any())).thenReturn(SummaryEmailResult.NO_TEMPLATE);
+
+        assertEquals(SummaryEmailResult.NO_TEMPLATE, service.publish(user, DEPOSIT_LOCATION_ID).getSummaryEmail());
     }
 
     @Test

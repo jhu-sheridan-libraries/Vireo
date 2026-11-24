@@ -16,6 +16,7 @@ import org.tdl.vireo.model.User;
 import org.tdl.vireo.model.batch.BatchDepositSummaryBuilder;
 import org.tdl.vireo.model.batch.BatchStop;
 import org.tdl.vireo.model.batch.DepositOutcome;
+import org.tdl.vireo.model.batch.SummaryEmailResult;
 import org.tdl.vireo.model.repo.EmailTemplateRepo;
 import org.tdl.vireo.utility.TemplateUtility;
 
@@ -43,14 +44,15 @@ public class BatchDepositSummaryEmailService {
     @Autowired
     private VireoEmailSender emailSender;
 
-    public void send(User reviewer, DepositLocation location, List<DepositOutcome> outcomes, ZonedDateTime finishedAt) {
-        send(reviewer, location, outcomes, finishedAt, null);
+    public SummaryEmailResult send(User reviewer, DepositLocation location, List<DepositOutcome> outcomes, ZonedDateTime finishedAt) {
+        return send(reviewer, location, outcomes, finishedAt, null);
     }
 
     /**
      * @param stop when not null, the run stopped early and the summary says so.
+     * @return whether the email was sent, and if not, why; never throws for these cases
      */
-    public void send(User reviewer, DepositLocation location, List<DepositOutcome> outcomes, ZonedDateTime finishedAt, BatchStop stop) {
+    public SummaryEmailResult send(User reviewer, DepositLocation location, List<DepositOutcome> outcomes, ZonedDateTime finishedAt, BatchStop stop) {
         int deposited = 0;
         int failed = 0;
         int notRecorded = 0;
@@ -70,7 +72,7 @@ public class BatchDepositSummaryEmailService {
             String address = reviewerAddress(reviewer);
             if (address == null || address.trim().isEmpty()) {
                 LOG.warn("Batch deposit summary not sent: reviewer {} has no email address.", reviewerName(reviewer));
-                return;
+                return SummaryEmailResult.NO_ADDRESS;
             }
 
             EmailTemplate template = emailTemplateRepo.findByNameAndSystemRequired(TEMPLATE_NAME, false);
@@ -79,7 +81,7 @@ public class BatchDepositSummaryEmailService {
             }
             if (template == null) {
                 LOG.error("Batch deposit summary not sent: email template '{}' was not found.", TEMPLATE_NAME);
-                return;
+                return SummaryEmailResult.NO_TEMPLATE;
             }
 
             // A template saved before NOT_RECORDED_LIST existed (an older system template kept as a
@@ -98,9 +100,11 @@ public class BatchDepositSummaryEmailService {
             String message = templateUtility.templateLiteral(template.getMessage(), values);
 
             emailSender.sendEmail(address, subject, message);
+            return SummaryEmailResult.SENT;
         } catch (MessagingException | RuntimeException e) {
             // RuntimeException includes Spring's MailException (org.springframework.mail).
             logSendFailure(reviewer, deposited, failed, notRecorded, e);
+            return SummaryEmailResult.SEND_FAILED;
         }
     }
 

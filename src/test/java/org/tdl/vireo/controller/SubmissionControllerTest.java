@@ -33,6 +33,7 @@ import org.tdl.vireo.mock.BatchTestGenerators;
 import org.tdl.vireo.model.Action;
 import org.tdl.vireo.model.batch.BatchDepositResult;
 import org.tdl.vireo.model.batch.DepositOutcome;
+import org.tdl.vireo.model.batch.SummaryEmailResult;
 import org.tdl.vireo.service.BatchDepositService;
 import org.tdl.vireo.model.ActionLog;
 import org.tdl.vireo.model.NamedSearchFilterGroup;
@@ -215,6 +216,88 @@ public class SubmissionControllerTest extends AbstractControllerTest {
 
         assertEquals("Batch publish finished: 0 deposited, 1 failed. See the summary email for details.", result.getMeta().getMessage());
         assertEquals(0, counts(result).get("notRecorded"));
+    }
+
+    private List<DepositOutcome> oneOfEach() {
+        List<DepositOutcome> outcomes = new ArrayList<>();
+        outcomes.add(DepositOutcome.deposited(1L, "One"));
+        outcomes.add(DepositOutcome.failed(4L, "Four", "boom", new RuntimeException("boom")));
+        outcomes.add(DepositOutcome.notRecorded(3L, "Three", "http://repo.example.org/3", "log failed", new RuntimeException("log failed")));
+        outcomes.add(DepositOutcome.failed(7L, "Seven", "boom", new RuntimeException("boom")));
+        return outcomes;
+    }
+
+    @Test
+    public void testBatchPublishMessageWhenSummaryTemplateIsMissing() {
+        when(batchDepositService.publish(TEST_USER_1, 7L)).thenReturn(new BatchDepositResult(oneOfEach(), SummaryEmailResult.NO_TEMPLATE));
+
+        ApiResponse result = submissionController.batchPublish(TEST_USER_1, 7L);
+
+        assertEquals(ApiStatus.ERROR, result.getMeta().getStatus());
+        assertEquals("Batch publish finished: 1 deposited, 2 failed, 1 deposited but not recorded in Vireo (do not retry these)."
+            + " No summary email was sent because the email template 'SYSTEM Batch Deposit Summary' is missing."
+            + " Not recorded: #3. Failed: #4, #7. Ask an administrator to check the server log for details.",
+            result.getMeta().getMessage());
+    }
+
+    @Test
+    public void testBatchPublishMessageNamesEachNotSentReason() {
+        when(batchDepositService.publish(TEST_USER_1, 7L)).thenReturn(new BatchDepositResult(oneOfEach(), SummaryEmailResult.NO_ADDRESS));
+        assertTrue(submissionController.batchPublish(TEST_USER_1, 7L).getMeta().getMessage()
+            .contains(" No summary email was sent because your account has no email address. Not recorded: #3."));
+
+        when(batchDepositService.publish(TEST_USER_1, 7L)).thenReturn(new BatchDepositResult(oneOfEach(), SummaryEmailResult.SEND_FAILED));
+        assertTrue(submissionController.batchPublish(TEST_USER_1, 7L).getMeta().getMessage()
+            .contains(" No summary email was sent because sending the email failed. Not recorded: #3."));
+    }
+
+    @Test
+    public void testBatchPublishMessageKeepsSummaryEmailTextWhenSent() {
+        when(batchDepositService.publish(TEST_USER_1, 7L)).thenReturn(new BatchDepositResult(oneOfEach(), SummaryEmailResult.SENT));
+
+        String message = submissionController.batchPublish(TEST_USER_1, 7L).getMeta().getMessage();
+
+        assertTrue(message.endsWith(" See the summary email for details."), message);
+        assertTrue(!message.contains("#3"), message);
+    }
+
+    @Test
+    public void testBatchPublishIdsListNotRecordedFirstAndStopAtTen() {
+        List<DepositOutcome> outcomes = new ArrayList<>();
+        for (long id = 1; id <= 3; id++) {
+            outcomes.add(DepositOutcome.notRecorded(id, "NR", "http://repo/" + id, "r", null));
+        }
+        for (long id = 101; id <= 112; id++) {
+            outcomes.add(DepositOutcome.failed(id, "F", "r", null));
+        }
+
+        assertEquals(" Not recorded: #1, #2, #3. Failed: #101, #102, #103, #104, #105, #106, #107, and 5 more.",
+            SubmissionController.batchPublishIds(outcomes));
+    }
+
+    @Test
+    public void testBatchPublishIdsWhenNotRecordedUseTheWholeLimit() {
+        List<DepositOutcome> outcomes = new ArrayList<>();
+        for (long id = 1; id <= 12; id++) {
+            outcomes.add(DepositOutcome.notRecorded(id, "NR", "http://repo/" + id, "r", null));
+        }
+        outcomes.add(DepositOutcome.failed(101L, "F", "r", null));
+        outcomes.add(DepositOutcome.failed(102L, "F", "r", null));
+        outcomes.add(DepositOutcome.deposited(200L, "D"));
+
+        assertEquals(" Not recorded: #1, #2, #3, #4, #5, #6, #7, #8, #9, #10, and 2 more. Failed: 2 not listed.",
+            SubmissionController.batchPublishIds(outcomes));
+    }
+
+    @Test
+    public void testBatchPublishSuccessIgnoresUnsentSummary() {
+        List<DepositOutcome> outcomes = new ArrayList<>();
+        outcomes.add(DepositOutcome.deposited(1L, "One"));
+        when(batchDepositService.publish(TEST_USER_1, 7L)).thenReturn(new BatchDepositResult(outcomes, SummaryEmailResult.NO_TEMPLATE));
+
+        ApiResponse result = submissionController.batchPublish(TEST_USER_1, 7L);
+
+        assertEquals(ApiStatus.SUCCESS, result.getMeta().getStatus());
     }
 
     @SuppressWarnings("unchecked")

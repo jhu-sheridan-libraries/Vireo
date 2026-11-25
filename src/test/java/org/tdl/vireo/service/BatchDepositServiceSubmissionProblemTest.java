@@ -43,10 +43,11 @@ import org.tdl.vireo.model.repo.SubmissionStatusRepo;
 import org.tdl.vireo.utility.PackagerUtility;
 
 /**
- * An Error on one submission stops the batch: that submission is recorded as usual, the rest are
- * reported as not attempted, the summary is still sent, and the same Error is rethrown.
+ * Problems confined to one submission. An unreadable title is reported as absent and the batch
+ * goes on. An Error stops the batch: that submission is recorded as usual, the rest are reported
+ * as not attempted, the summary is still sent, and the same Error is rethrown.
  */
-public class BatchDepositServiceErrorStopTest {
+public class BatchDepositServiceSubmissionProblemTest {
 
     private static final long DEPOSIT_LOCATION_ID = 7L;
 
@@ -113,6 +114,25 @@ public class BatchDepositServiceErrorStopTest {
         lenient().when(value.getValue()).thenReturn(title);
         lenient().when(submission.getFieldValuesByPredicateValue("dc.title")).thenReturn(Collections.singletonList(value));
         return submission;
+    }
+
+    @Test
+    public void unreadableTitlesAreReportedWithoutTitleAndDoNotStopTheBatch() {
+        // A stored dc.title value of null (FieldValue.value is nullable), and a title lookup that throws.
+        FieldValue nullValue = mock(FieldValue.class);
+        lenient().when(submissions.get(0).getFieldValuesByPredicateValue("dc.title")).thenReturn(Collections.singletonList(nullValue));
+        lenient().when(submissions.get(1).getFieldValuesByPredicateValue("dc.title")).thenThrow(new IllegalStateException("lazy load failed"));
+
+        List<DepositOutcome> outcomes = service.publish(user, DEPOSIT_LOCATION_ID).getOutcomes();
+
+        assertEquals(3, outcomes.size());
+        for (DepositOutcome outcome : outcomes) {
+            assertTrue(outcome.isDeposited(), "submission " + outcome.getSubmissionId());
+        }
+        assertNull(outcomes.get(0).getTitle());
+        assertNull(outcomes.get(1).getTitle());
+        assertEquals("Title 3", outcomes.get(2).getTitle());
+        verify(summaryEmailService).send(any(), any(), any(), any());
     }
 
     @Test

@@ -152,6 +152,14 @@ public class BatchDepositSummaryEmailServiceTest {
     }
 
     @Test
+    public void testBlankPreferredSettingDoesNotFallBackToAccountEmail() throws Exception {
+        SummaryEmailResult result = service.send(reviewer("rita@example.org", "  "), location("Repo"), outcomes, finishedAt);
+
+        assertEquals(SummaryEmailResult.NO_ADDRESS, result);
+        verify(emailSender, never()).sendEmail(anyString(), anyString(), anyString());
+    }
+
+    @Test
     public void testBlankAddressLogsOneWarnAndSkipsSender() throws Exception {
         service.send(reviewer("   ", null), location("Repo"), outcomes, finishedAt);
 

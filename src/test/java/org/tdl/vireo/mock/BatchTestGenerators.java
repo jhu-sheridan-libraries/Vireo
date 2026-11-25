@@ -1,8 +1,5 @@
 package org.tdl.vireo.mock;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,9 +22,6 @@ public final class BatchTestGenerators {
 
     private static final int MAX_SIZE = 1000;
 
-    private static final String[] ZONES = { "UTC", "America/New_York", "America/Los_Angeles", "Europe/London", "Asia/Kolkata", "Asia/Tokyo", "Australia/Adelaide", "Pacific/Auckland",
-            "Pacific/Chatham", "America/St_Johns" };
-
     private static final String[] TITLE_TOKENS = { "Thesis", "on", "the", "Theory", "of", "Everything", "$1", "$", "\\", "\\$", "$&", "${x}", "{FAILED_LIST}", "{TOTAL_COUNT}", "\u00e9",
             "-", "#" };
 
@@ -35,10 +29,6 @@ public final class BatchTestGenerators {
 
     public BatchTestGenerators(long seed) {
         this.random = new Random(seed);
-    }
-
-    public Random random() {
-        return random;
     }
 
     // ---------------------------------------------------------------- iteration
@@ -249,15 +239,5 @@ public final class BatchTestGenerators {
         }
     }
 
-    // ------------------------------------------------------------------- times
-
-    /**
-     * A zoned time at a random instant (1970 to roughly 2100) in a random zone.
-     */
-    public ZonedDateTime zonedDateTime() {
-        long epochSecond = (long) (random.nextDouble() * 4_102_444_800L);
-        ZoneId zone = ZoneId.of(ZONES[random.nextInt(ZONES.length)]);
-        return ZonedDateTime.ofInstant(Instant.ofEpochSecond(epochSecond), zone);
-    }
 
 }

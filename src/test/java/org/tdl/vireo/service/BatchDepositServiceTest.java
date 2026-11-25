@@ -25,14 +25,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.mail.MessagingException;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.slf4j.LoggerFactory;
@@ -92,18 +94,8 @@ public class BatchDepositServiceTest {
     private ListAppender<ILoggingEvent> appender;
     private Logger serviceLogger;
 
-    /** The level the logger had before this class raised it to ALL, restored so other test classes keep the configured level. */
-    private static Level originalServiceLoggerLevel;
+    private Level previousLevel;
 
-    @BeforeAll
-    public static void rememberServiceLoggerLevel() {
-        originalServiceLoggerLevel = ((Logger) LoggerFactory.getLogger(BatchDepositService.class)).getLevel();
-    }
-
-    @AfterAll
-    public static void restoreServiceLoggerLevel() {
-        ((Logger) LoggerFactory.getLogger(BatchDepositService.class)).setLevel(originalServiceLoggerLevel);
-    }
 
     /** Index of each export package, so the depositor can fail by submission position. */
     private final Map<ExportPackage, Integer> indexByPackage = new IdentityHashMap<>();
@@ -111,10 +103,6 @@ public class BatchDepositServiceTest {
 
     @BeforeEach
     public void setUp() {
-        if (appender != null) {
-            // setUp is re-run inside multi-run tests; drop the previous appender.
-            tearDown();
-        }
         indexByPackage.clear();
         packages.clear();
         statusRepo = mock(SubmissionStatusRepo.class);
@@ -174,6 +162,7 @@ public class BatchDepositServiceTest {
         serviceLogger = (Logger) LoggerFactory.getLogger(BatchDepositService.class);
         appender = new ListAppender<>();
         appender.start();
+        previousLevel = serviceLogger.getLevel();
         serviceLogger.setLevel(Level.ALL);
         serviceLogger.addAppender(appender);
     }
@@ -182,6 +171,7 @@ public class BatchDepositServiceTest {
     public void tearDown() {
         serviceLogger.detachAppender(appender);
         appender.stop();
+        serviceLogger.setLevel(previousLevel);
     }
 
     /**
@@ -370,82 +360,60 @@ public class BatchDepositServiceTest {
 
     // ------------------------------------------------------------- Req 8.3
 
-    private String runWithSender(boolean[] failing, Throwable senderFailure, List<String> outcomesOut) throws Exception {
-        setUp();
-        List<Submission> submissions = prepareBatch(failing);
-        if (senderFailure instanceof MessagingException) {
-            doThrow(senderFailure).when(emailSender).sendEmail(anyString(), anyString(), anyString());
-        } else if (senderFailure != null) {
-            doThrow((RuntimeException) senderFailure).when(emailSender).sendEmail(anyString(), anyString(), anyString());
-        }
-        BatchDepositResult[] holder = new BatchDepositResult[1];
-        assertDoesNotThrow(() -> holder[0] = service.publish(user, LOCATION_ID));
-        verify(emailSender, times(1)).sendEmail(anyString(), anyString(), anyString());
-        for (DepositOutcome o : holder[0].getOutcomes()) {
-            outcomesOut.add(o.getSubmissionId() + "|" + o.isDeposited() + "|" + o.getFailureReason());
-        }
-        outcomesOut.add("counts=" + holder[0].deposited() + "/" + holder[0].failed() + "/" + holder[0].total());
-        verify(depositor, times(failing.length)).deposit(any(), any());
-        verify(submissionRepo, times(holder[0].deposited())).updateStatus(any(Submission.class), any(), any());
-        return state(submissions, published);
+    static Stream<Exception> senderFailures() {
+        return Stream.of(new MessagingException("smtp down"), new MailSendException("mail failure"));
     }
 
-    @Test
-    public void senderThrowingDoesNotChangeResultOrPersistedCalls() throws Exception {
-        boolean[] failing = { false, true, false, true };
+    @ParameterizedTest
+    @MethodSource("senderFailures")
+    public void senderThrowingDoesNotChangeResultOrPersistedState(Exception failure) throws Exception {
+        List<Submission> submissions = prepareBatch(false, true, false, true);
+        doThrow(failure).when(emailSender).sendEmail(anyString(), anyString(), anyString());
 
-        List<String> baselineOutcomes = new ArrayList<>();
-        String baselineState = runWithSender(failing, null, baselineOutcomes);
+        BatchDepositResult result = assertDoesNotThrow(() -> service.publish(user, LOCATION_ID));
 
-        Throwable[] failures = { new MessagingException("smtp down"), new MailSendException("mail failure") };
-        for (Throwable failure : failures) {
-            List<String> outcomes = new ArrayList<>();
-            String state = runWithSender(failing, failure, outcomes);
-            assertEquals(baselineOutcomes, outcomes, "outcomes with " + failure.getClass().getSimpleName());
-            assertEquals(baselineState, state, "persisted state with " + failure.getClass().getSimpleName());
-        }
+        verify(emailSender, times(1)).sendEmail(anyString(), anyString(), anyString());
+        assertEquals(2, result.deposited());
+        assertEquals(2, result.failed());
+        assertEquals("1|published|http://deposited.example.org/0;2|prior|http://prior.example.org/1;"
+            + "3|published|http://deposited.example.org/2;4|prior|http://prior.example.org/3;", state(submissions, published));
+        verify(depositor, times(4)).deposit(any(), any());
+        verify(submissionRepo, times(2)).updateStatus(any(Submission.class), any(), any());
     }
 
     // ------------------------------------------------------------- Req 7
 
-    @Test
-    public void preconditionCasesReportFirstMissingInOrderWithNoSideEffects() throws Exception {
-        for (int mask = 1; mask < 8; mask++) {
-            setUp();
-            prepareBatch(false, false, false);
-            boolean noStatus = (mask & 1) != 0;
-            boolean noLocation = (mask & 2) != 0;
-            boolean noDepositor = (mask & 4) != 0;
-            if (noStatus) {
-                lenient().when(statusRepo.findByName(BatchDepositService.PUBLISHED_STATUS_NAME)).thenReturn(null);
-            }
-            if (noLocation) {
-                lenient().when(locationRepo.findById(LOCATION_ID)).thenReturn(Optional.empty());
-            }
-            if (noDepositor) {
-                lenient().when(depositorService.getDepositor("depositor")).thenReturn(null);
-            }
-
-            BatchDepositResult result = service.publish(user, LOCATION_ID);
-
-            String ctx = "mask=" + mask;
-            assertTrue(result.isPreconditionFailed(), ctx);
-            String message = result.getPreconditionError();
-            assertNotNull(message, ctx);
-            if (noStatus) {
-                assertTrue(message.contains(BatchDepositService.PUBLISHED_STATUS_NAME), ctx + ": " + message);
-            } else if (noLocation) {
-                assertTrue(message.contains("deposit location") && message.contains(String.valueOf(LOCATION_ID)), ctx + ": " + message);
-            } else {
-                assertTrue(message.contains("depositor"), ctx + ": " + message);
-            }
-            verifyNoInteractions(depositor);
-            verifyNoInteractions(packagerUtility);
-            verifyNoInteractions(submissionEmailService);
-            verifyNoInteractions(emailSender);
-            verify(submissionRepo, never()).batchDynamicSubmissionQuery(any(), any());
-            verify(submissionRepo, never()).updateStatus(any(Submission.class), any(), any());
+    @ParameterizedTest
+    @ValueSource(ints = { 1, 2, 3, 4, 5, 6, 7 })
+    public void preconditionCasesReportFirstMissingInOrderWithNoSideEffects(int mask) {
+        prepareBatch(false, false, false);
+        boolean noStatus = (mask & 1) != 0;
+        boolean noLocation = (mask & 2) != 0;
+        boolean noDepositor = (mask & 4) != 0;
+        if (noStatus) {
+            lenient().when(statusRepo.findByName(BatchDepositService.PUBLISHED_STATUS_NAME)).thenReturn(null);
         }
+        if (noLocation) {
+            lenient().when(locationRepo.findById(LOCATION_ID)).thenReturn(Optional.empty());
+        }
+        if (noDepositor) {
+            lenient().when(depositorService.getDepositor("depositor")).thenReturn(null);
+        }
+
+        BatchDepositResult result = service.publish(user, LOCATION_ID);
+
+        assertTrue(result.isPreconditionFailed());
+        String message = result.getPreconditionError();
+        if (noStatus) {
+            assertTrue(message.contains(BatchDepositService.PUBLISHED_STATUS_NAME), message);
+        } else if (noLocation) {
+            assertTrue(message.contains("deposit location") && message.contains(String.valueOf(LOCATION_ID)), message);
+        } else {
+            assertTrue(message.contains("depositor"), message);
+        }
+        verifyNoInteractions(depositor, packagerUtility, submissionEmailService, emailSender);
+        verify(submissionRepo, never()).batchDynamicSubmissionQuery(any(), any());
+        verify(submissionRepo, never()).updateStatus(any(Submission.class), any(), any());
     }
 
     // ------------------------------------------------------------- Req 2.4

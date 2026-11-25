@@ -101,14 +101,5 @@ public class BatchDepositSummaryBuilderNotRecordedTest {
         assertFalse(content.getParameters().get("FAILED_LIST").contains("http://repo/"));
     }
 
-    @Test
-    public void resultCountsEachStatusSeparately() {
-        BatchDepositResult result = new BatchDepositResult(outcomes);
-
-        assertEquals(1, result.deposited());
-        assertEquals(1, result.failed());
-        assertEquals(2, result.notRecorded());
-        assertEquals(4, result.total());
-    }
 
 }

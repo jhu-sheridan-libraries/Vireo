@@ -68,6 +68,8 @@ public class BatchDepositSummaryEmailServiceTest {
 
     private Logger serviceLogger;
 
+    private Level previousLevel;
+
     private final ZonedDateTime finishedAt = ZonedDateTime.of(2024, 5, 6, 7, 8, 9, 0, ZoneId.of("UTC"));
 
     private final List<DepositOutcome> outcomes = Arrays.asList(
@@ -80,6 +82,7 @@ public class BatchDepositSummaryEmailServiceTest {
         serviceLogger = (Logger) LoggerFactory.getLogger(BatchDepositSummaryEmailService.class);
         appender = new ListAppender<>();
         appender.start();
+        previousLevel = serviceLogger.getLevel();
         serviceLogger.setLevel(Level.ALL);
         serviceLogger.addAppender(appender);
     }
@@ -88,6 +91,7 @@ public class BatchDepositSummaryEmailServiceTest {
     public void detachAppender() {
         serviceLogger.detachAppender(appender);
         appender.stop();
+        serviceLogger.setLevel(previousLevel);
     }
 
     private List<ILoggingEvent> logs(Level level) {
@@ -126,7 +130,7 @@ public class BatchDepositSummaryEmailServiceTest {
     public void testCustomTemplatePreferredOverSystemTemplate() throws Exception {
         doReturn(template("custom subject", "custom body")).when(emailTemplateRepo).findByNameAndSystemRequired(TEMPLATE_NAME, false);
 
-        service.send(reviewer("rita@example.org", null), location("Repo"), outcomes, finishedAt);
+        assertSent(SummaryEmailResult.SENT, reviewer("rita@example.org", null), location("Repo"), outcomes, finishedAt);
 
         verify(emailSender).sendEmail("rita@example.org", "custom subject", "custom body");
         verify(emailTemplateRepo, never()).findByNameAndSystemRequired(TEMPLATE_NAME, true);
@@ -161,7 +165,7 @@ public class BatchDepositSummaryEmailServiceTest {
 
     @Test
     public void testBlankAddressLogsOneWarnAndSkipsSender() throws Exception {
-        service.send(reviewer("   ", null), location("Repo"), outcomes, finishedAt);
+        assertSent(SummaryEmailResult.NO_ADDRESS, reviewer("   ", null), location("Repo"), outcomes, finishedAt);
 
         verify(emailSender, never()).sendEmail(anyString(), anyString(), anyString());
         List<ILoggingEvent> warns = logs(Level.WARN);
@@ -175,7 +179,7 @@ public class BatchDepositSummaryEmailServiceTest {
         when(emailTemplateRepo.findByNameAndSystemRequired(TEMPLATE_NAME, false)).thenReturn(null);
         when(emailTemplateRepo.findByNameAndSystemRequired(TEMPLATE_NAME, true)).thenReturn(null);
 
-        service.send(reviewer("rita@example.org", null), location("Repo"), outcomes, finishedAt);
+        assertSent(SummaryEmailResult.NO_TEMPLATE, reviewer("rita@example.org", null), location("Repo"), outcomes, finishedAt);
 
         verify(emailSender, never()).sendEmail(anyString(), anyString(), anyString());
         List<ILoggingEvent> errors = logs(Level.ERROR);
@@ -189,9 +193,9 @@ public class BatchDepositSummaryEmailServiceTest {
         doReturn(template("s", "b")).when(emailTemplateRepo).findByNameAndSystemRequired(TEMPLATE_NAME, false);
         doThrow(new MessagingException("smtp down")).when(emailSender).sendEmail(anyString(), anyString(), anyString());
 
-        service.send(reviewer("rita@example.org", null), location("Repo"), outcomes, finishedAt);
+        assertSent(SummaryEmailResult.SEND_FAILED, reviewer("rita@example.org", null), location("Repo"), outcomes, finishedAt);
 
-        assertSendFailureLogged();
+        assertSendFailureLogged(2, 1, 0);
     }
 
     @Test
@@ -199,18 +203,21 @@ public class BatchDepositSummaryEmailServiceTest {
         doReturn(template("s", "b")).when(emailTemplateRepo).findByNameAndSystemRequired(TEMPLATE_NAME, false);
         doThrow(new MailSendException("smtp down")).when(emailSender).sendEmail(anyString(), anyString(), anyString());
 
-        service.send(reviewer("rita@example.org", null), location("Repo"), outcomes, finishedAt);
+        assertSent(SummaryEmailResult.SEND_FAILED, reviewer("rita@example.org", null), location("Repo"), withNotRecorded, finishedAt);
 
-        assertSendFailureLogged();
+        assertSendFailureLogged(1, 1, 1);
     }
 
-    private void assertSendFailureLogged() {
+    private void assertSent(SummaryEmailResult expected, User reviewer, DepositLocation location, List<DepositOutcome> outcomes, ZonedDateTime finishedAt) {
+        assertEquals(expected, service.send(reviewer, location, outcomes, finishedAt));
+    }
+
+    private void assertSendFailureLogged(int deposited, int failed, int notRecorded) {
         List<ILoggingEvent> errors = logs(Level.ERROR);
         assertEquals(1, errors.size());
         String message = errors.get(0).getFormattedMessage();
         assertTrue(message.contains("Rita Reviewer"), message);
-        assertTrue(message.contains("Deposited: 2"), message);
-        assertTrue(message.contains("Failed: 1"), message);
+        assertTrue(message.contains("(Deposited: " + deposited + ", Failed: " + failed + ", Not recorded: " + notRecorded + ")"), message);
     }
 
     @Test
@@ -309,47 +316,6 @@ public class BatchDepositSummaryEmailServiceTest {
         verify(emailSender).sendEmail(anyString(), subject.capture(), body.capture());
         assertEquals("Summary for Repo ", subject.getValue());
         assertEquals("line one\nline two", body.getValue(), "the body keeps its line breaks");
-    }
-
-    @Test
-    public void testSendReportsSent() throws Exception {
-        doReturn(template("s", "{NOT_RECORDED_LIST}")).when(emailTemplateRepo).findByNameAndSystemRequired(TEMPLATE_NAME, false);
-
-        assertEquals(SummaryEmailResult.SENT, service.send(reviewer("rita@example.org", null), location("Repo"), outcomes, finishedAt));
-    }
-
-    @Test
-    public void testSendReportsNoAddress() throws Exception {
-        assertEquals(SummaryEmailResult.NO_ADDRESS, service.send(reviewer(" ", null), location("Repo"), outcomes, finishedAt));
-    }
-
-    @Test
-    public void testSendReportsNoTemplate() throws Exception {
-        when(emailTemplateRepo.findByNameAndSystemRequired(TEMPLATE_NAME, false)).thenReturn(null);
-        when(emailTemplateRepo.findByNameAndSystemRequired(TEMPLATE_NAME, true)).thenReturn(null);
-
-        assertEquals(SummaryEmailResult.NO_TEMPLATE, service.send(reviewer("rita@example.org", null), location("Repo"), outcomes, finishedAt));
-    }
-
-    @Test
-    public void testSendReportsSendFailed() throws Exception {
-        doReturn(template("s", "{NOT_RECORDED_LIST}")).when(emailTemplateRepo).findByNameAndSystemRequired(TEMPLATE_NAME, false);
-        doThrow(new MessagingException("smtp down")).when(emailSender).sendEmail(anyString(), anyString(), anyString());
-
-        assertEquals(SummaryEmailResult.SEND_FAILED, service.send(reviewer("rita@example.org", null), location("Repo"), outcomes, finishedAt));
-    }
-
-    @Test
-    public void testSendFailureLogIncludesNotRecordedCount() throws Exception {
-        doReturn(template("s", "{NOT_RECORDED_LIST}")).when(emailTemplateRepo).findByNameAndSystemRequired(TEMPLATE_NAME, false);
-        doThrow(new MailSendException("smtp down")).when(emailSender).sendEmail(anyString(), anyString(), anyString());
-
-        service.send(reviewer("rita@example.org", null), location("Repo"), withNotRecorded, finishedAt);
-
-        List<ILoggingEvent> errors = logs(Level.ERROR);
-        assertEquals(1, errors.size());
-        String message = errors.get(0).getFormattedMessage();
-        assertTrue(message.contains("Deposited: 1") && message.contains("Failed: 1") && message.contains("Not recorded: 1"), message);
     }
 
 }

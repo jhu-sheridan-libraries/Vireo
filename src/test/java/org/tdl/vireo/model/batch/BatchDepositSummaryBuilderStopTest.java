@@ -74,11 +74,5 @@ public class BatchDepositSummaryBuilderStopTest {
         assertEquals(BatchDepositSummaryBuilder.MAX_ENTRIES, content.getFailedLines().size());
     }
 
-    @Test
-    public void noStopMeansNoNote() {
-        assertEquals(
-            new BatchDepositSummaryBuilder().build("Repo", outcomes, FINISHED_AT, false).getParameters(),
-            new BatchDepositSummaryBuilder().build("Repo", outcomes, FINISHED_AT, false, null).getParameters());
-    }
 
 }

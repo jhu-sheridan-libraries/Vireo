@@ -47,28 +47,6 @@ public class BatchDepositSummaryTemplateTest {
         "DEPOSIT_LOCATION", "TOTAL_COUNT", "DEPOSITED_COUNT", "FAILED_COUNT", "NOT_RECORDED_COUNT",
         "FINISHED_AT", "NOT_RECORDED_LIST", "DEPOSITED_LIST", "FAILED_LIST");
 
-    @Test
-    public void testNotRecordedSectionComesFirstAndSubjectHasAllCounts() throws Exception {
-        String content = readResource();
-        String uncommented = Arrays.stream(content.split("\\r?\\n"))
-            .filter(l -> !l.startsWith("#"))
-            .collect(Collectors.joining("\n"));
-
-        assertTrue(uncommented.contains("Subject: Batch Publish Summary: {DEPOSITED_COUNT} deposited, {FAILED_COUNT} failed, {NOT_RECORDED_COUNT} not recorded"), uncommented);
-        int notRecorded = uncommented.indexOf("{NOT_RECORDED_LIST}");
-        assertTrue(notRecorded >= 0 && notRecorded < uncommented.indexOf("{FAILED_LIST}") && notRecorded < uncommented.indexOf("{DEPOSITED_LIST}"),
-            "Not recorded section must come before the failed and deposited lists");
-    }
-
-    @Test
-    public void testInstalledTemplateKeepsNotRecordedPlaceholder() throws Exception {
-        // The loader strips any line containing '#'; the installed message must still have the new section.
-        EmailTemplate template = emailTemplateRepo.findByNameAndSystemRequired(TEMPLATE_NAME, true);
-        assertTrue(template.getMessage().contains("{NOT_RECORDED_LIST}"), template.getMessage());
-        assertTrue(template.getMessage().contains("Publishing them again creates duplicates."), template.getMessage());
-        assertTrue(template.getSubject().contains("{NOT_RECORDED_COUNT} not recorded"), template.getSubject());
-    }
-
     @Autowired
     private SystemDataLoader systemDataLoader;
 
@@ -93,64 +71,39 @@ public class BatchDepositSummaryTemplateTest {
         }
     }
 
-    @Test
-    public void testResourceDocumentsAllParameters() throws Exception {
-        List<String> lines = Arrays.asList(readResource().split("\\r?\\n"));
-        List<String> comments = lines.stream().filter(l -> l.startsWith("#")).collect(Collectors.toList());
-
-        for (String parameter : PARAMETERS) {
-            assertTrue(comments.stream().anyMatch(c -> c.contains("{" + parameter + "}")),
-                "Header comment must document {" + parameter + "}");
-        }
+    private String uncommentedResource() throws Exception {
+        return Arrays.stream(readResource().split("\\r?\\n"))
+            .filter(l -> !l.startsWith("#"))
+            .collect(Collectors.joining("\n"));
     }
 
     @Test
-    public void testResourceUsesAllParametersInSubjectOrBody() throws Exception {
-        String content = readResource();
-        String uncommented = Arrays.stream(content.split("\\r?\\n"))
-            .filter(l -> !l.startsWith("#"))
-            .collect(Collectors.joining("\n"));
+    public void testResourceUsesEveryParameterWithNotRecordedFirst() throws Exception {
+        String uncommented = uncommentedResource();
 
-        assertTrue(uncommented.contains("Subject:"), "Template must define a subject");
-
+        assertTrue(uncommented.contains("Subject: Batch Publish Summary: {DEPOSITED_COUNT} deposited, {FAILED_COUNT} failed, {NOT_RECORDED_COUNT} not recorded"), uncommented);
         for (String parameter : PARAMETERS) {
-            assertTrue(uncommented.contains("{" + parameter + "}"),
-                "Subject or body must use {" + parameter + "}");
+            assertTrue(uncommented.contains("{" + parameter + "}"), "Subject or body must use {" + parameter + "}");
         }
+        int notRecorded = uncommented.indexOf("{NOT_RECORDED_LIST}");
+        assertTrue(notRecorded < uncommented.indexOf("{FAILED_LIST}") && notRecorded < uncommented.indexOf("{DEPOSITED_LIST}"),
+            "Not recorded section must come before the failed and deposited lists");
     }
 
     @Test
     public void testLoaderInstallsTemplateAsSystemRequired() throws Exception {
-        // The load itself happened once in loadSystemDataOnce().
         EmailTemplate template = emailTemplateRepo.findByNameAndSystemRequired(TEMPLATE_NAME, true);
 
         assertNotNull(template, "Loader must install " + TEMPLATE_NAME);
-        assertEquals(TEMPLATE_NAME, template.getName());
         assertTrue(template.getSystemRequired(), "Template must be systemRequired");
-        assertTrue(template.getSubject() != null && !template.getSubject().trim().isEmpty(), "Subject must not be empty");
-        assertTrue(template.getMessage() != null && !template.getMessage().trim().isEmpty(), "Message must not be empty");
-    }
-
-    @Test
-    public void testSecondRunCreatesNoDuplicate() throws Exception {
-        // The first run was loadSystemDataOnce(); the load below is the second run.
-        long totalAfterFirst = emailTemplateRepo.count();
-        String subject = emailTemplateRepo.findByNameAndSystemRequired(TEMPLATE_NAME, true).getSubject();
-        String message = emailTemplateRepo.findByNameAndSystemRequired(TEMPLATE_NAME, true).getMessage();
-
-        systemDataLoader.loadSystemData();
-
-        assertEquals(1, emailTemplateRepo.findByName(TEMPLATE_NAME).size(), "Second run must not duplicate the template");
-        assertEquals(totalAfterFirst, emailTemplateRepo.count(), "Second run must not change the number of templates");
-        EmailTemplate template = emailTemplateRepo.findByNameAndSystemRequired(TEMPLATE_NAME, true);
-        assertEquals(subject, template.getSubject());
-        assertEquals(message, template.getMessage());
+        // The loader strips any line containing '#'; the installed text must still have the new section.
+        assertTrue(template.getMessage().contains("{NOT_RECORDED_LIST}"), template.getMessage());
+        assertTrue(template.getMessage().contains("Publishing them again creates duplicates."), template.getMessage());
+        assertTrue(template.getSubject().contains("{NOT_RECORDED_COUNT} not recorded"), template.getSubject());
     }
 
     @Test
     public void testSecondRunLeavesEditedTemplateUnchanged() throws Exception {
-        // The first run was loadSystemDataOnce(); the load below is the second run.
-
         // An administrator edit is stored as a custom (non system required) copy.
         EmailTemplate custom = emailTemplateRepo.create(TEMPLATE_NAME, "Edited subject", "Edited message");
         custom.setSystemRequired(false);

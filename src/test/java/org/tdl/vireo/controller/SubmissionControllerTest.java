@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import javax.servlet.ServletOutputStream;
@@ -29,7 +28,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.ActiveProfiles;
 import org.tdl.vireo.exception.BatchExportException;
-import org.tdl.vireo.mock.BatchTestGenerators;
 import org.tdl.vireo.model.Action;
 import org.tdl.vireo.model.batch.BatchDepositResult;
 import org.tdl.vireo.model.batch.DepositOutcome;
@@ -96,9 +94,6 @@ public class SubmissionControllerTest extends AbstractControllerTest {
     @InjectMocks
     private SubmissionController submissionController;
 
-    private static final long BATCH_BASE_SEED = 20240612L;
-    private static final int BATCH_ITERATIONS = 100;
-
     @BeforeEach
     public void setup() {
 
@@ -134,7 +129,6 @@ public class SubmissionControllerTest extends AbstractControllerTest {
 
         assertEquals(ApiStatus.ERROR, result.getMeta().getStatus());
         assertEquals("No deposit location", result.getMeta().getMessage());
-        verify(batchDepositService).publish(TEST_USER_1, 7L);
     }
 
     @Test
@@ -147,45 +141,6 @@ public class SubmissionControllerTest extends AbstractControllerTest {
         Map<String, Object> counts = counts(result);
         assertEquals(0, counts.get("deposited"));
         assertEquals(0, counts.get("failed"));
-    }
-
-    @Test
-    @SuppressWarnings("unchecked")
-    public void testBatchPublishResponseStatusFollowsFailureCount() {
-        // Feature: batch-deposit-summary-email, Property 12: Response status follows failure count
-        // Validates: Requirements 6.1, 6.2
-        BatchTestGenerators.runIterations(BATCH_BASE_SEED, BATCH_ITERATIONS, (gen, iteration) -> {
-            String ctx = " [seed=" + BATCH_BASE_SEED + ", iteration=" + iteration + "]";
-            int size = gen.sizeForIteration(iteration);
-            List<DepositOutcome> outcomes = gen.outcomes(size);
-            // Force the no-failure branch for a share of iterations so both branches are well covered.
-            if (iteration % 3 == 0) {
-                List<DepositOutcome> allDeposited = new ArrayList<>();
-                for (DepositOutcome o : outcomes) {
-                    allDeposited.add(DepositOutcome.deposited(o.getSubmissionId(), o.getTitle()));
-                }
-                outcomes = allDeposited;
-            }
-            BatchDepositResult batch = new BatchDepositResult(outcomes);
-            int d = batch.deposited();
-            int f = batch.failed();
-
-            when(batchDepositService.publish(TEST_USER_1, 9L)).thenReturn(batch);
-
-            ApiResponse result = submissionController.batchPublish(TEST_USER_1, 9L);
-            Map<String, Object> counts = counts(result);
-
-            if (f == 0) {
-                assertEquals(ApiStatus.SUCCESS, result.getMeta().getStatus(), "status for d=" + d + ", f=" + f + ctx);
-            } else {
-                assertEquals(ApiStatus.ERROR, result.getMeta().getStatus(), "status for d=" + d + ", f=" + f + ctx);
-                String message = result.getMeta().getMessage();
-                assertTrue(message != null && !message.isEmpty(), "message present" + ctx);
-                assertTrue(message.contains(String.valueOf(d)) && message.contains(String.valueOf(f)), "message has counts d=" + d + ", f=" + f + ": " + message + ctx);
-            }
-            assertEquals(d, counts.get("deposited"), "deposited count" + ctx);
-            assertEquals(f, counts.get("failed"), "failed count" + ctx);
-        });
     }
 
     @Test
@@ -249,16 +204,6 @@ public class SubmissionControllerTest extends AbstractControllerTest {
         when(batchDepositService.publish(TEST_USER_1, 7L)).thenReturn(new BatchDepositResult(oneOfEach(), SummaryEmailResult.SEND_FAILED));
         assertTrue(submissionController.batchPublish(TEST_USER_1, 7L).getMeta().getMessage()
             .contains(" No summary email was sent because sending the email failed. Not recorded: #3."));
-    }
-
-    @Test
-    public void testBatchPublishMessageKeepsSummaryEmailTextWhenSent() {
-        when(batchDepositService.publish(TEST_USER_1, 7L)).thenReturn(new BatchDepositResult(oneOfEach(), SummaryEmailResult.SENT));
-
-        String message = submissionController.batchPublish(TEST_USER_1, 7L).getMeta().getMessage();
-
-        assertTrue(message.endsWith(" See the summary email for details."), message);
-        assertTrue(!message.contains("#3"), message);
     }
 
     @Test

@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
+
 import org.junit.jupiter.api.Test;
 
 /**
@@ -20,6 +22,20 @@ public class BatchDepositResultTest {
     public void preconditionFailedRejectsBlankMessage() {
         assertThrows(IllegalArgumentException.class, () -> BatchDepositResult.preconditionFailed(""));
         assertThrows(IllegalArgumentException.class, () -> BatchDepositResult.preconditionFailed("  "));
+    }
+
+    @Test
+    public void countsEachStatusSeparately() {
+        BatchDepositResult result = new BatchDepositResult(Arrays.asList(
+            DepositOutcome.deposited(1, "One"),
+            DepositOutcome.failed(2, "Two", "r", null),
+            DepositOutcome.notRecorded(3, "Three", "http://repo/3", "r", null),
+            DepositOutcome.notRecorded(4, null, null, "r", null)));
+
+        assertEquals(1, result.deposited());
+        assertEquals(1, result.failed());
+        assertEquals(2, result.notRecorded());
+        assertEquals(4, result.total());
     }
 
     @Test

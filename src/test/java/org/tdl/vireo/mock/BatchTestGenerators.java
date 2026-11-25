@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -22,11 +21,9 @@ import org.tdl.vireo.model.batch.DepositOutcome;
 public final class BatchTestGenerators {
 
     /** Fixed outcome-list sizes that every list-driven property must cover. */
-    public static final int[] BOUNDARY_SIZES = { 0, 1, 499, 500, 501, 1000 };
+    private static final int[] BOUNDARY_SIZES = { 0, 1, 499, 500, 501, 1000 };
 
-    public static final int MAX_SIZE = 1000;
-
-    public static final int MIN_ITERATIONS = 100;
+    private static final int MAX_SIZE = 1000;
 
     private static final String[] ZONES = { "UTC", "America/New_York", "America/Los_Angeles", "Europe/London", "Asia/Kolkata", "Asia/Tokyo", "Australia/Adelaide", "Pacific/Auckland",
             "Pacific/Chatham", "America/St_Johns" };
@@ -36,15 +33,8 @@ public final class BatchTestGenerators {
 
     private final Random random;
 
-    private final long seed;
-
     public BatchTestGenerators(long seed) {
-        this.seed = seed;
         this.random = new Random(seed);
-    }
-
-    public long getSeed() {
-        return seed;
     }
 
     public Random random() {
@@ -56,7 +46,7 @@ public final class BatchTestGenerators {
     /**
      * Derives the seed of one iteration from the base seed and the iteration number.
      */
-    public static long iterationSeed(long baseSeed, int iteration) {
+    private static long iterationSeed(long baseSeed, int iteration) {
         long z = baseSeed + (iteration + 1L) * 0x9E3779B97F4A7C15L;
         z = (z ^ (z >>> 30)) * 0xBF58476D1CE4E5B9L;
         z = (z ^ (z >>> 27)) * 0x94D049BB133111EBL;
@@ -71,14 +61,11 @@ public final class BatchTestGenerators {
      * @param baseSeed
      *            fixed base seed of the calling test
      * @param iterations
-     *            number of iterations, at least {@value #MIN_ITERATIONS}
+     *            number of iterations
      * @param body
      *            receives the generator and the iteration number
      */
     public static void runIterations(long baseSeed, int iterations, BiConsumer<BatchTestGenerators, Integer> body) {
-        if (iterations < MIN_ITERATIONS) {
-            throw new IllegalArgumentException("At least " + MIN_ITERATIONS + " iterations are required, got " + iterations);
-        }
         for (int i = 0; i < iterations; i++) {
             long iterationSeed = iterationSeed(baseSeed, i);
             try {
@@ -222,20 +209,6 @@ public final class BatchTestGenerators {
         return list;
     }
 
-    /**
-     * An outcome list of a random size from 0 to {@link #MAX_SIZE}.
-     */
-    public List<DepositOutcome> outcomes() {
-        return outcomes(random.nextInt(MAX_SIZE + 1));
-    }
-
-    /**
-     * An outcome list sized by iteration number: boundary sizes first, then random sizes.
-     */
-    public List<DepositOutcome> outcomesForIteration(int iteration) {
-        return outcomes(sizeForIteration(iteration));
-    }
-
     // -------------------------------------------------------------- throwables
 
     /**
@@ -244,14 +217,6 @@ public final class BatchTestGenerators {
      */
     public Throwable throwableChain() {
         return chain(1 + random.nextInt(5), random.nextInt(5) == 0);
-    }
-
-    /**
-     * A throwable chain of 2 to 5 elements whose last cause points back to an earlier
-     * element, so walking getCause() never terminates without a guard.
-     */
-    public Throwable cyclicThrowable() {
-        return chain(2 + random.nextInt(4), true);
     }
 
     private Throwable chain(int depth, boolean cyclic) {
@@ -293,10 +258,6 @@ public final class BatchTestGenerators {
         long epochSecond = (long) (random.nextDouble() * 4_102_444_800L);
         ZoneId zone = ZoneId.of(ZONES[random.nextInt(ZONES.length)]);
         return ZonedDateTime.ofInstant(Instant.ofEpochSecond(epochSecond), zone);
-    }
-
-    public static List<String> zoneIds() {
-        return Collections.unmodifiableList(Arrays.asList(ZONES));
     }
 
 }

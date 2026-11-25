@@ -311,6 +311,54 @@ public class BatchDepositServiceTest {
     }
 
     @Test
+    public void eachOutcomeLeavesTheSubmissionAsExpected() throws Exception {
+        // 1 succeeds, 2 deposit fails, 3 update fails before saving, 4 after saving, 5 workflow email fails.
+        List<Submission> submissions = prepareBatch(false, true, false, false, false);
+        SubmissionStatus[] prior = new SubmissionStatus[submissions.size()];
+        for (int i = 0; i < prior.length; i++) {
+            prior[i] = submissions.get(i).getSubmissionStatus();
+        }
+        lenient().when(submissionRepo.updateStatus(any(Submission.class), any(), any())).thenAnswer(inv -> {
+            Submission s = inv.getArgument(0);
+            if (s.getId() == 3L) {
+                throw new IllegalStateException("failed before save");
+            }
+            s.setSubmissionStatus(inv.getArgument(1));
+            if (s.getId() == 4L) {
+                throw new IllegalStateException("failed after save");
+            }
+            return s;
+        });
+        doThrow(new RuntimeException("workflow email failed")).when(submissionEmailService).sendWorkflowEmails(user, 5L);
+
+        List<DepositOutcome> outcomes = service.publish(user, LOCATION_ID).getOutcomes();
+
+        assertTrue(outcomes.get(0).isDeposited());
+        assertSame(published, submissions.get(0).getSubmissionStatus());
+
+        assertTrue(outcomes.get(1).isFailed());
+        assertEquals("deposit failed 1", outcomes.get(1).getCause().getMessage());
+        assertSame(prior[1], submissions.get(1).getSubmissionStatus());
+        assertEquals("http://prior.example.org/1", submissions.get(1).getDepositURL());
+
+        // Not recorded: the repository's URL is kept on the outcome and the entity, never reset.
+        for (int i : new int[] { 2, 3 }) {
+            assertTrue(outcomes.get(i).isNotRecorded(), "submission " + (i + 1));
+            assertEquals("http://deposited.example.org/" + i, outcomes.get(i).getDepositURL());
+            assertEquals("http://deposited.example.org/" + i, submissions.get(i).getDepositURL());
+        }
+        assertSame(prior[2], submissions.get(2).getSubmissionStatus(), "status as left before the save");
+        assertSame(published, submissions.get(3).getSubmissionStatus(), "status as left after the save");
+
+        assertTrue(outcomes.get(4).isDeposited(), "a failed workflow email keeps Deposited");
+        assertNull(outcomes.get(4).getCause());
+
+        verify(submissionEmailService).sendWorkflowEmails(user, 1L);
+        verify(submissionEmailService).sendWorkflowEmails(user, 5L);
+        verify(submissionEmailService, times(2)).sendWorkflowEmails(any(), any(Long.class));
+    }
+
+    @Test
     public void emptyBatchAttemptsNothingAndStillSendsSummary() throws Exception {
         prepareBatch();
 

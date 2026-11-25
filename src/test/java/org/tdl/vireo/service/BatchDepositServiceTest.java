@@ -11,6 +11,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.MailSendException;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -297,10 +299,25 @@ public class BatchDepositServiceTest {
         assertCounts(result, 3, 1);
         assertFalse(result.getOutcomes().get(0).isDeposited());
         verify(depositor, times(4)).deposit(any(), any());
-        for (int i = 1; i < submissions.size(); i++) {
-            assertSame(published, submissions.get(i).getSubmissionStatus());
-            verify(packagerUtility, times(1)).packageExport(packager, submissions.get(i));
+        InOrder inOrder = inOrder(packagerUtility);
+        for (int i = 0; i < submissions.size(); i++) {
+            inOrder.verify(packagerUtility).packageExport(packager, submissions.get(i));
+            assertEquals(i + 1L, result.getOutcomes().get(i).getSubmissionId());
+            if (i > 0) {
+                assertSame(published, submissions.get(i).getSubmissionStatus());
+            }
         }
+        verify(packagerUtility, times(4)).packageExport(any(Packager.class), any(Submission.class));
+    }
+
+    @Test
+    public void emptyBatchAttemptsNothingAndStillSendsSummary() throws Exception {
+        prepareBatch();
+
+        BatchDepositResult result = service.publish(user, LOCATION_ID);
+
+        assertCounts(result, 0, 0);
+        verifyNoInteractions(depositor, packagerUtility, submissionEmailService);
     }
 
     // ------------------------------------------------------------- Req 8.3

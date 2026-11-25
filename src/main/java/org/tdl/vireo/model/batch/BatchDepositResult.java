@@ -7,8 +7,6 @@ import java.util.List;
 /**
  * The result of one batch deposit run: either the per-submission outcomes, or
  * a precondition error when the run could not start.
- *
- * Plain in-memory value; never persisted.
  */
 public final class BatchDepositResult {
 
@@ -25,9 +23,6 @@ public final class BatchDepositResult {
         this(outcomes, SummaryEmailResult.SENT);
     }
 
-    /**
-     * @param summaryEmail whether the summary email was sent, and if not, why
-     */
     public BatchDepositResult(List<DepositOutcome> outcomes, SummaryEmailResult summaryEmail) {
         this(outcomes, null, summaryEmail);
     }
@@ -47,12 +42,11 @@ public final class BatchDepositResult {
         if (message == null || message.trim().isEmpty()) {
             throw new IllegalArgumentException("A precondition failure needs a message");
         }
-        // The run did not start, so there is no summary email.
         return new BatchDepositResult(null, message, null);
     }
 
     /**
-     * @return whether the summary email was sent, and if not, why; null for a precondition failure.
+     * @return null for a precondition failure
      */
     public SummaryEmailResult getSummaryEmail() {
         return summaryEmail;
@@ -81,9 +75,6 @@ public final class BatchDepositResult {
         return count(DepositOutcome.Status.FAILED);
     }
 
-    /**
-     * @return the number of submissions deposited to the repository but not recorded in Vireo.
-     */
     public int notRecorded() {
         return count(DepositOutcome.Status.NOT_RECORDED);
     }

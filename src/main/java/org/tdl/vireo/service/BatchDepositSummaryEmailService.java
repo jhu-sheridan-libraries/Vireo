@@ -23,8 +23,8 @@ import org.tdl.vireo.utility.TemplateUtility;
 /**
  * Sends the summary of a batch deposit run to the reviewer who started it.
  *
- * Sending is best effort: {@link #send} never throws, so a mail problem can
- * never affect the result of the batch run.
+ * Sending is best effort: {@link #send} catches every Exception, so a mail problem cannot
+ * affect the result of the batch run. An Error still propagates.
  */
 @Service
 public class BatchDepositSummaryEmailService {

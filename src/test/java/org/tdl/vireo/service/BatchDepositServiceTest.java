@@ -64,11 +64,6 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 
-/**
- * Example-based unit tests for {@link BatchDepositService}.
- *
- * Covers Requirements 1.1, 1.2, 2.4, 5.1, 5.2, 7.1 to 7.5, and 8.1 to 8.3.
- */
 public class BatchDepositServiceTest {
 
     private static final long LOCATION_ID = 7L;
@@ -228,7 +223,6 @@ public class BatchDepositServiceTest {
         return sb.toString();
     }
 
-    // ------------------------------------------------------------- Req 8.1
 
     @Test
     public void allSucceed() throws Exception {
@@ -278,7 +272,6 @@ public class BatchDepositServiceTest {
         verify(submissionEmailService, never()).sendWorkflowEmails(any(), any(Long.class));
     }
 
-    // ------------------------------------------------------------- Req 8.2
 
     @Test
     public void firstFailsAndEveryFollowingSubmissionIsStillAttempted() throws Exception {
@@ -358,7 +351,6 @@ public class BatchDepositServiceTest {
         verifyNoInteractions(depositor, packagerUtility, submissionEmailService);
     }
 
-    // ------------------------------------------------------------- Req 8.3
 
     static Stream<Exception> senderFailures() {
         return Stream.of(new MessagingException("smtp down"), new MailSendException("mail failure"));
@@ -381,7 +373,6 @@ public class BatchDepositServiceTest {
         verify(submissionRepo, times(2)).updateStatus(any(Submission.class), any(), any());
     }
 
-    // ------------------------------------------------------------- Req 7
 
     @ParameterizedTest
     @ValueSource(ints = { 1, 2, 3, 4, 5, 6, 7 })
@@ -416,7 +407,6 @@ public class BatchDepositServiceTest {
         verify(submissionRepo, never()).updateStatus(any(Submission.class), any(), any());
     }
 
-    // ------------------------------------------------------------- Req 2.4
 
     @Test
     public void oneErrorLogPerFailedSubmissionWithThrowableAttached() {

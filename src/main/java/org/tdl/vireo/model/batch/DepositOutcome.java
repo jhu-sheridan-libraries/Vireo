@@ -2,14 +2,9 @@ package org.tdl.vireo.model.batch;
 
 /**
  * The result of attempting to deposit a single submission during a batch run.
- *
- * Plain in-memory value; never persisted.
  */
 public final class DepositOutcome {
 
-    /**
-     * What happened to one submission.
-     */
     public enum Status {
         /** Deposited to the repository and recorded as Published in Vireo. */
         DEPOSITED,
@@ -98,7 +93,7 @@ public final class DepositOutcome {
     }
 
     /**
-     * @return the exception that caused the failure, or null when the submission was deposited.
+     * @return the exception that caused the failure, or null when deposited or not attempted.
      */
     public Throwable getCause() {
         return cause;

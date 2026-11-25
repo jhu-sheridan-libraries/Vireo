@@ -9,8 +9,6 @@ import java.util.Map;
 
 /**
  * Builds the placeholder values for the batch deposit summary email.
- *
- * Pure: performs no I/O.
  */
 public final class BatchDepositSummaryBuilder {
 

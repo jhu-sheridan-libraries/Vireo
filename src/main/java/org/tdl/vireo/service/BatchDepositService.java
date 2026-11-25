@@ -27,17 +27,9 @@ import org.tdl.vireo.utility.PackagerUtility;
 import org.tdl.vireo.utility.SubmissionHelperUtility;
 
 /**
- * Orchestrates one batch deposit run.
- *
- * Preconditions are validated before any deposit is attempted. Each matched
- * submission is then attempted in order, isolating per-submission failures so a
- * single bad submission never blocks the rest of the batch. After the loop a
- * single summary email is sent to the reviewer who started the run. The summary
- * email is best effort and never changes the result of the run.
- *
- * An {@link Error} (for example OutOfMemoryError) is the exception: the submission
- * being attempted is recorded as usual, the remaining submissions are reported as
- * not attempted, the summary is sent, and the Error is rethrown.
+ * Runs one batch deposit. Each matched submission is attempted in order, so one failure never
+ * blocks the rest, and one best-effort summary email goes to the reviewer. An {@link Error} stops
+ * the run: what is known is reported, then the Error is rethrown.
  */
 @Service
 public class BatchDepositService {
@@ -71,14 +63,11 @@ public class BatchDepositService {
      * Publishes every submission matched by the reviewer's active filter to the
      * given deposit location.
      *
-     * @param user              the reviewer who started the run
-     * @param depositLocationId the id of the deposit location to publish to
      * @return the result of the run, or a precondition failure when the run
      *         could not start
      */
     public BatchDepositResult publish(User user, Long depositLocationId) {
 
-        // Preconditions, in order: Published status, deposit location, depositor.
         SubmissionStatus publishedStatus = submissionStatusRepo.findByName(PUBLISHED_STATUS_NAME);
         if (publishedStatus == null) {
             return BatchDepositResult.preconditionFailed("Could not find a submission status named " + PUBLISHED_STATUS_NAME);

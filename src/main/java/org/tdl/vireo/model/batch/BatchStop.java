@@ -3,8 +3,6 @@ package org.tdl.vireo.model.batch;
 /**
  * Describes a batch deposit run that stopped early because an {@link Error} was
  * thrown while attempting one submission.
- *
- * Plain in-memory value; never persisted.
  */
 public final class BatchStop {
 

@@ -920,7 +920,6 @@ public class SubmissionController {
             + batchPublishIds(result.getOutcomes()) + " Ask an administrator to check the server log for details.", counts);
     }
 
-    /** At most this many submission ids are named in a batch publish response. */
     static final int BATCH_PUBLISH_MAX_IDS = 10;
 
     private static String summaryEmailNotSentReason(SummaryEmailResult summaryEmail) {
@@ -937,7 +936,7 @@ public class SubmissionController {
 
     /**
      * Lists the ids of Not recorded submissions, then Failed ones, at most
-     * {@link #BATCH_PUBLISH_MAX_IDS} in total, so the "do not retry" ids are never cut off.
+     * {@link #BATCH_PUBLISH_MAX_IDS} in total, so the "do not retry" ids are listed first.
      */
     static String batchPublishIds(List<DepositOutcome> outcomes) {
         List<Long> notRecordedIds = new ArrayList<Long>();

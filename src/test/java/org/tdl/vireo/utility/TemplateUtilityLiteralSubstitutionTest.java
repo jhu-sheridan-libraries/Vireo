@@ -14,10 +14,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Randomized test for TemplateUtility.templateLiteral.
- *
- * Feature: batch-deposit-summary-email, Property 9: Template substitution is literal
- *
- * Validates: Requirements 4.8
  */
 class TemplateUtilityLiteralSubstitutionTest {
 
@@ -39,7 +35,7 @@ class TemplateUtilityLiteralSubstitutionTest {
     private final TemplateUtility templateUtility = new TemplateUtility();
 
     @Test
-    @DisplayName("Property 9: template substitution inserts values literally")
+    @DisplayName("Template substitution inserts values literally")
     void substitutionIsLiteral() {
         for (int iteration = 0; iteration < ITERATIONS; iteration++) {
             long seed = BASE_SEED * 31 + iteration;
@@ -79,7 +75,7 @@ class TemplateUtilityLiteralSubstitutionTest {
     }
 
     @Test
-    @DisplayName("Property 9: unknown placeholders are left untouched and values are not rescanned")
+    @DisplayName("Unknown placeholders are left untouched and values are not rescanned")
     void unknownPlaceholdersUntouchedAndNoRescan() {
         for (int iteration = 0; iteration < ITERATIONS; iteration++) {
             long seed = BASE_SEED * 37 + iteration;

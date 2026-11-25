@@ -29,8 +29,6 @@ import org.tdl.vireo.model.repo.EmailTemplateRepo;
 /**
  * Tests the Batch Deposit Summary email template resource and its installation
  * by {@link SystemDataLoader}.
- *
- * Requirements 4.1, 4.2, 4.3, 4.4, 4.5.
  */
 @ActiveProfiles(value = { "test", "isolated-test" })
 @SpringBootTest(classes = { Application.class })

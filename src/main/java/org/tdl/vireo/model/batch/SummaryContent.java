@@ -6,14 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The values for the batch deposit summary email placeholders.
- *
- * {@link #getDepositedLines()}, {@link #getFailedLines()} and {@link #getNotRecordedLines()}
- * contain only the entry lines that were listed (at most
- * {@link BatchDepositSummaryBuilder#MAX_ENTRIES} each). The "... and N more not listed"
- * line and the "none" statements appear only in the DEPOSITED_LIST, FAILED_LIST and
- * NOT_RECORDED_LIST placeholder text. When built for a legacy template, the failed lines
- * also include the marked deposited-but-not-recorded entries.
+ * The values for the batch deposit summary email placeholders. The line lists hold only the
+ * entries that were listed; the "... and N more" and "none" texts appear only in the values.
  */
 public final class SummaryContent {
 
